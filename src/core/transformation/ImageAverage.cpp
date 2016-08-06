@@ -129,9 +129,10 @@ ImageAverage ImageAverage::calcAverageImage( const ImageInterface & image )
                 }
             }
 
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumAvgCh1 / ( averaging * averaging );
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumAvgCh2 / ( averaging * averaging );
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumAvgCh3 / ( averaging * averaging );
+            const int avgAvg = averaging * averaging;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumAvgCh1 / avgAvg;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumAvgCh2 / avgAvg;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumAvgCh3 / avgAvg;
         }
     }
 

@@ -129,23 +129,25 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
                 for( int yWindow = 0; yWindow < averaging; ++yWindow )
                 {
                     const int yWindowByteOffset = bytesPerLine * ( yNew * averaging + yWindow );
-                    int ch1 = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
-                    int ch2 = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
-                    int ch3 = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
 
-                    ch1 -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ];
-                    ch2 -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ];
-                    ch3 -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ];
+                    int ch1  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
+                    ch1     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ];
+                    sumCh1  += ch1 * ch1;
 
-                    sumCh1 += ch1 * ch1;
-                    sumCh2 += ch2 * ch2;
-                    sumCh3 += ch3 * ch3;
+                    int ch2  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
+                    ch2     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ];
+                    sumCh2  += ch2 * ch2;
+
+                    int ch3  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
+                    ch3     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ];
+                    sumCh3  += ch3 * ch3;
                 }
             }
 
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumCh1 / ( averaging * averaging );
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumCh2 / ( averaging * averaging );
-            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumCh3 / ( averaging * averaging );
+            const int avgAvg = averaging * averaging;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumCh1 / avgAvg;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumCh2 / avgAvg;
+            newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumCh3 / avgAvg;
         }
     }
 
