@@ -13,11 +13,13 @@
 
 
 #include "ImageJfif.h"
+#include "ImageAverage.h"
+#include "ImageVariance.h"
 
 // Define static logger variable
-log4cxx::LoggerPtr loggerMain  ( log4cxx::Logger::getLogger( "main" ) );
-log4cxx::LoggerPtr loggerImage ( log4cxx::Logger::getLogger( "image" ) );
-
+log4cxx::LoggerPtr loggerMain           ( log4cxx::Logger::getLogger( "main" ) );
+log4cxx::LoggerPtr loggerImage          ( log4cxx::Logger::getLogger( "image" ) );
+log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
 
 int main( int argc, const char* argv[] )
 {
@@ -43,14 +45,16 @@ int main( int argc, const char* argv[] )
         defaultLayout   = new log4cxx::SimpleLayout();
         defaultAppender = new log4cxx::ConsoleAppender(defaultLayout);
         
-        loggerMain->addAppender  ( defaultAppender );
-        loggerImage->addAppender ( defaultAppender );
+        loggerMain->addAppender           ( defaultAppender );
+        loggerImage->addAppender          ( defaultAppender );
+        loggerTransformation->addAppender ( defaultAppender );
 
         auto logLevel = log4cxx::Level::getDebug();
         // auto logLevel = log4cxx::Level::getInfo();
         
-        loggerMain->setLevel( logLevel );  // Log level set to DEBUG
-        loggerImage->setLevel( logLevel );   // Log level set to INFO
+        loggerMain->setLevel           ( logLevel );  // Log level set to DEBUG
+        loggerImage->setLevel          ( logLevel );   // Log level set to INFO
+        loggerTransformation->setLevel ( logLevel );   // Log level set to INFO
 
         std::cout << "Could not open Log4cxx configuration XML file: " << log4cxxConfigFile << std::endl;
         perror("Problem opening log4cxx config file");
@@ -69,7 +73,11 @@ int main( int argc, const char* argv[] )
         // LOG4CXX_ERROR( loggerMain, "this is a error message, something serious is happening." );
         // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
 
-        imageshrink::ImageJfif ijfif( "/home/wast/Documents/test/test/resources/lena.jpg" );
+        imageshrink::ImageJfif     imagejfif( "/home/wast/Documents/test/test/resources/lena.jpg" );
+        imageshrink::ImageAverage  imageAverage( imagejfif );
+        imageshrink::ImageVariance imageVariance( imagejfif, imageAverage );
+        imageshrink::ImageJfif     imagejfif2( imageVariance );
+        imagejfif2.storeInFile( "test.jpg" );
     }
 
 

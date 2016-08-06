@@ -1,25 +1,23 @@
 
-#ifndef IMAGEJFIF_H_
-#define IMAGEJFIF_H_
+#ifndef IMAGEAVERAGE_H_
+#define IMAGEAVERAGE_H_
 
 // include system headers
 #include <memory> // for smart pointer
 
 // include application headers
 #include "ImageInterface.h"
-#include "stringShrdPtr.h"
-#include "enumChrominanceSubsampling.h"
 
 namespace imageshrink
 {
 
 // create convenient types
-class ImageJfif;
-typedef std::shared_ptr<ImageJfif> ImageJfifShrdPtr;
-typedef std::weak_ptr<ImageJfif>   ImageJfifWkPtr;
+class ImageAverage;
+typedef std::shared_ptr<ImageAverage> ImageAverageShrdPtr;
+typedef std::weak_ptr<ImageAverage>   ImageAverageWkPtr;
 
 // declaration
-class ImageJfif
+class ImageAverage
 : public ImageInterface
 {
     //********** PRELIMINARY **********
@@ -27,12 +25,10 @@ class ImageJfif
 
     //********** (DE/CON)STRUCTORS **********
     public:
-        ImageJfif();
-        ImageJfif( stringConstShrdPtr path );
-        ImageJfif( const std::string & path );
-        ImageJfif( const ImageInterface & image );
-        ImageJfif( ImageInterfaceShrdPtr image );
-        virtual ~ImageJfif() {}
+        ImageAverage();
+        ImageAverage( ImageInterfaceShrdPtr image );
+        ImageAverage( const ImageInterface & image );
+        virtual ~ImageAverage() {}
 
     protected:
 
@@ -65,24 +61,16 @@ class ImageJfif
         virtual void reset();
 
         // own functions
-        ImageJfif getCompressedDecompressedImage( int quality );
-        void storeInFile( const std::string & path );
+        // ...
 
     protected:
 
     private:
-        void loadImage( const std::string & path );
 
-        ChrominanceSubsampling::VALUE convertTjJpegSubsamp( int value );
-        Colorspace::VALUE convertTjJpegColorspace( int value );
-        PixelFormat::VALUE convertTjPixelFormat( int value );
-        int convert2Tj( ChrominanceSubsampling::VALUE cs );
-
-        ImageJfif decompress( ImageBufferShrdPtr compressedImage );
-        ImageBufferShrdPtr compress( const ImageJfif & notCompressed, int quality = 85, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
+        ImageAverage calcAverageImage( const ImageInterface & image );
 
 }; //class
 
 } //namespace imageshrink
 
-#endif //IMAGEJFIF_H_
+#endif //IMAGEAVERAGE_H_

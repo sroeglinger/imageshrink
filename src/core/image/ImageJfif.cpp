@@ -2,7 +2,6 @@
 // include system headers
 #include <fstream>      // std::ifstream
 #include <limits>       // std::numeric_limits<...>::...
-#include <memory>
 #include <cstring>      // std::memcpy
 
 // include own headers
@@ -15,12 +14,12 @@
 namespace imageshrink
 {
 
-log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
+static log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
 
 ImageJfif::ImageJfif()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
-, m_pitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -37,7 +36,7 @@ ImageJfif::ImageJfif( stringConstShrdPtr path )
 ImageJfif::ImageJfif( const std::string & path )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
-, m_pitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -46,11 +45,33 @@ ImageJfif::ImageJfif( const std::string & path )
     loadImage( path );
 }
 
+ImageJfif::ImageJfif( const ImageInterface & image )
+: m_pixelFormat( PixelFormat::UNKNOWN )
+, m_colorspace( Colorspace::UNKNOWN  )
+, m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_imageBuffer()
+, m_width( 0 )
+, m_height( 0 )
+{
+    m_pixelFormat            = image.getPixelFormat();
+    m_colorspace             = image.getColorspace();
+    m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    m_imageBuffer            = image.getImageBuffer();  //TODO: deep copy
+    m_width                  = image.getWidth();
+    m_height                 = image.getHeight();
+}
+
+ImageJfif::ImageJfif( ImageInterfaceShrdPtr image )
+: ImageJfif( *image )
+{
+    // nothing
+}
+
 void ImageJfif::reset()
 {
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
-    m_pitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
+    m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
     m_imageBuffer.reset();
 }
 
@@ -79,14 +100,35 @@ void ImageJfif::loadImage( const std::string & path )
     LOG4CXX_INFO( loggerImage, "read JFIF file with " << length << " Bytes ... done" );
     
     // decompress jpeg
-    ImageJfif image( decompress( compressedImage ) );
+    ImageJfif image = decompress( compressedImage );
 
     m_pixelFormat            = image.m_pixelFormat;
     m_colorspace             = image.m_colorspace;
-    m_pitsPerPixelAndChannel = image.m_pitsPerPixelAndChannel;
+    m_bitsPerPixelAndChannel = image.m_bitsPerPixelAndChannel;
     m_imageBuffer            = image.m_imageBuffer;
     m_width                  = image.m_width;
     m_height                 = image.m_height;
+}
+
+void ImageJfif::storeInFile( const std::string & path )
+{    
+    if( !m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "m_imageBuffer is a nullptr" );
+        return;
+    }
+
+    // compress image
+    ImageBufferShrdPtr compressedImage = compress( *this, /*quality*/ 85, ChrominanceSubsampling::CS_444 );
+
+    // write new image
+    LOG4CXX_INFO( loggerImage, "write to file ..." );
+
+    std::ofstream ofs ( path.c_str(), std::ifstream::out | std::ifstream::binary );
+    ofs.write( reinterpret_cast<const char*>( compressedImage->image ), compressedImage->size );
+    ofs.close();
+
+    LOG4CXX_INFO( loggerImage, "write to file ... done" );
 }
 
 ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
@@ -120,7 +162,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     {
         ret.m_colorspace             = convertTjJpegColorspace( jpegColorspace );
         ret.m_pixelFormat            = convertTjPixelFormat( tjOutputPixelFormat );
-        ret.m_pitsPerPixelAndChannel = BitsPerPixelAndChannel::BITS_8;
+        ret.m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::BITS_8;
         ret.m_width                  = width;
         ret.m_height                 = height;
 
@@ -128,7 +170,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
         LOG4CXX_INFO( loggerImage, "chrominance subsampling: " << ChrominanceSubsampling::toString( convertTjJpegSubsamp(jpegSubsamp) ) );
         LOG4CXX_INFO( loggerImage, "colorspace: " << Colorspace::toString( ret.m_colorspace ) );
         LOG4CXX_INFO( loggerImage, "pixelformat: " << PixelFormat::toString( ret.m_pixelFormat ) );
-        LOG4CXX_INFO( loggerImage, "pits per pixel and channel: " << BitsPerPixelAndChannel::toString( ret.m_pitsPerPixelAndChannel ) );
+        LOG4CXX_INFO( loggerImage, "pits per pixel and channel: " << BitsPerPixelAndChannel::toString( ret.m_bitsPerPixelAndChannel ) );
     }
     else
     {
@@ -136,7 +178,10 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     }
 
     // allocate buffer for decompressed image
-    ImageBufferShrdPtr imageBuffer = ImageBufferShrdPtr( new ImageBuffer( width * height * PixelFormat::channelsPerPixel(ret.m_pixelFormat) * BitsPerPixelAndChannel::bytesPerChannel(ret.m_pitsPerPixelAndChannel) ) );
+    const int bytesPerPixel = PixelFormat::channelsPerPixel(ret.m_pixelFormat) * BitsPerPixelAndChannel::bytesPerChannel(ret.m_bitsPerPixelAndChannel);
+    const int nofPixels     = width * height;
+    const int bufferSize    = bytesPerPixel * nofPixels;
+    ImageBufferShrdPtr imageBuffer = ImageBufferShrdPtr( new ImageBuffer( bufferSize ) );
 
     // decompress image
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ..." );
@@ -176,15 +221,24 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     const int jpegSubsamp = convert2Tj( cs );
     int tjRet = 0;
 
+    // check image
+    if( !notCompressed.m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+        return ret;
+    }
+
     // compress jpeg
     tjhandle jpegCompressor = tjInitCompress();
 
     long unsigned int jpegSize = tjBufSize( notCompressed.m_width, notCompressed.m_height, jpegSubsamp );
     unsigned char* compressedImageBuffer = tjAlloc( jpegSize );
 
+    LOG4CXX_INFO( loggerImage, "compress image ..." );
+
     tjRet = tjCompress2(
         jpegCompressor,
-        reinterpret_cast<const unsigned char*>( notCompressed.m_imageBuffer.get() ),
+        reinterpret_cast<const unsigned char*>( notCompressed.m_imageBuffer->image ),
         notCompressed.m_width,
         /*pitch*/ 0,
         notCompressed.m_height,
@@ -195,6 +249,8 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
         quality,
         TJFLAG_FASTDCT
     );
+
+    LOG4CXX_INFO( loggerImage, "compress image ... done" );
 
     if( tjRet == 0 )
     {
