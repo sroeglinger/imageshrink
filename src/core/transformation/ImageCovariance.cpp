@@ -3,7 +3,7 @@
 // ...
 
 // include own headers
-#include "ImageVariance.h"
+#include "ImageCovariance.h"
 
 // include 3rd party headers
 #include <log4cxx/logger.h>
@@ -13,7 +13,7 @@ namespace imageshrink
 
 static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
 
-ImageVariance::ImageVariance()
+ImageCovariance::ImageCovariance()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
@@ -24,7 +24,7 @@ ImageVariance::ImageVariance()
     reset();
 }
 
-ImageVariance::ImageVariance( const ImageInterface & image, const ImageInterface & averageImage )
+ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
@@ -33,7 +33,7 @@ ImageVariance::ImageVariance( const ImageInterface & image, const ImageInterface
 , m_height( 0 )
 {
     reset();
-    ImageVariance var = calcVarianceImage( image, averageImage );
+    ImageCovariance var = calcCovarianceImage( image1, averageImage1, image2, averageImage2 );
 
     m_pixelFormat            = var.m_pixelFormat;
     m_colorspace             = var.m_colorspace;
@@ -43,7 +43,7 @@ ImageVariance::ImageVariance( const ImageInterface & image, const ImageInterface
     m_height                 = var.m_height;
 }
 
-void ImageVariance::reset()
+void ImageCovariance::reset()
 {
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
@@ -51,17 +51,21 @@ void ImageVariance::reset()
     m_imageBuffer.reset();
 }
 
-ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, const ImageInterface & averageImage )
+ImageCovariance ImageCovariance::calcCovarianceImage( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
 {
-    ImageVariance ret;
+    ImageCovariance ret;
     const int averaging = 8;
 
     // check original image
-    ImageBufferShrdPtr imageBuffer    = image.getImageBuffer();
-    ImageBufferShrdPtr imageAvgBuffer = averageImage.getImageBuffer();
+    ImageBufferShrdPtr imageBuffer1    = image1.getImageBuffer();
+    ImageBufferShrdPtr imageAvgBuffer1 = averageImage1.getImageBuffer();
+    ImageBufferShrdPtr imageBuffer2    = image2.getImageBuffer();
+    ImageBufferShrdPtr imageAvgBuffer2 = averageImage2.getImageBuffer();
 
-    if(    ( !imageBuffer )
-        || ( !imageAvgBuffer )
+    if(    ( !imageBuffer1 )
+        || ( !imageAvgBuffer1 )
+        || ( !imageBuffer2 )
+        || ( !imageAvgBuffer2 )
       )
     {
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
@@ -69,20 +73,26 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
         return ret;
     }
 
-    if(    ( averageImage.getWidth() != image.getWidth() / averaging )
-        || ( averageImage.getHeight() != image.getHeight() / averaging )
+    if(    ( image1.getWidth() != image2.getWidth() )
+        || ( image1.getHeight() != image2.getHeight() )
+        || ( averageImage1.getWidth() != averageImage2.getWidth() )
+        || ( averageImage1.getHeight() != averageImage2.getHeight() )
+        || ( averageImage1.getWidth() != image1.getWidth() / averaging )
+        || ( averageImage1.getHeight() != image1.getHeight() / averaging )
       )
     {
-        LOG4CXX_ERROR( loggerTransformation, "size missmatch between original image and average image" );
+        LOG4CXX_ERROR( loggerTransformation, "size missmatch between images" );
         ret.reset();
         return ret;
     }
 
-    const int bytesPerPixel = PixelFormat::channelsPerPixel(image.getPixelFormat()) * BitsPerPixelAndChannel::bytesPerChannel(image.getBitsPerPixelAndChannel());
-    const int nofPixels     = image.getWidth() * image.getHeight();
+    const int bytesPerPixel = PixelFormat::channelsPerPixel(image1.getPixelFormat()) * BitsPerPixelAndChannel::bytesPerChannel(image1.getBitsPerPixelAndChannel());
+    const int nofPixels     = image1.getWidth() * image1.getHeight();
     const int bufferSize    = bytesPerPixel * nofPixels;
 
-    if( bufferSize != imageBuffer->size )
+    if(    ( bufferSize != imageBuffer1->size )
+        || ( bufferSize != imageBuffer2->size )
+      )
     {
         LOG4CXX_ERROR( loggerTransformation, "buffer size missmatch" );
         ret.reset();
@@ -90,8 +100,8 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
     }
 
     // determine new image
-    const int newWidth  = image.getWidth() / averaging;
-    const int newHeight = image.getHeight() / averaging;
+    const int newWidth  = image1.getWidth() / averaging;
+    const int newHeight = image1.getHeight() / averaging;
 
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
@@ -108,7 +118,7 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
 
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
 
-    int bytesPerLine = image.getWidth() * bytesPerPixel;
+    int bytesPerLine = image1.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
 
     for( int xNew = 0; xNew < newWidth; ++xNew )
@@ -130,17 +140,23 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
                 {
                     const int yWindowByteOffset = bytesPerLine * ( yNew * averaging + yWindow );
 
-                    int ch1  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
-                    ch1     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ];
-                    sumCh1  += ch1 * ch1;
+                    int ch1_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
+                    ch1_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 0 ];
+                    int ch1_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
+                    ch1_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 0 ];
+                    sumCh1  += ch1_1 * ch1_2;
 
-                    int ch2  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
-                    ch2     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ];
-                    sumCh2  += ch2 * ch2;
+                    int ch2_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
+                    ch2_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 1 ];
+                    int ch2_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
+                    ch2_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 1 ];
+                    sumCh2  += ch2_1 * ch2_2;
 
-                    int ch3  = imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
-                    ch3     -= imageAvgBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ];
-                    sumCh3  += ch3 * ch3;
+                    int ch3_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
+                    ch3_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 2 ];
+                    int ch3_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
+                    ch3_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 2 ];
+                    sumCh3  += ch3_1 * ch3_2;
                 }
             }
 
@@ -154,9 +170,9 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
     LOG4CXX_INFO( loggerTransformation, "averaging ... done" );
 
     // collect data
-    ret.m_pixelFormat            = image.getPixelFormat();
-    ret.m_colorspace             = image.getColorspace();
-    ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    ret.m_pixelFormat            = image1.getPixelFormat();
+    ret.m_colorspace             = image1.getColorspace();
+    ret.m_bitsPerPixelAndChannel = image1.getBitsPerPixelAndChannel();
     ret.m_imageBuffer            = newImageBuffer;
     ret.m_width                  = newWidth;
     ret.m_height                 = newHeight;

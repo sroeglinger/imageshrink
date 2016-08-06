@@ -15,6 +15,7 @@
 #include "ImageJfif.h"
 #include "ImageAverage.h"
 #include "ImageVariance.h"
+#include "ImageCovariance.h"
 
 // Define static logger variable
 log4cxx::LoggerPtr loggerMain           ( log4cxx::Logger::getLogger( "main" ) );
@@ -73,10 +74,11 @@ int main( int argc, const char* argv[] )
         // LOG4CXX_ERROR( loggerMain, "this is a error message, something serious is happening." );
         // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
 
-        imageshrink::ImageJfif     imagejfif( "/home/wast/Documents/test/test/resources/lena.jpg" );
-        imageshrink::ImageAverage  imageAverage( imagejfif );
-        imageshrink::ImageVariance imageVariance( imagejfif, imageAverage );
-        imageshrink::ImageJfif     imagejfif2( imageVariance );
+        imageshrink::ImageJfif       imagejfif( "/home/wast/Documents/test/test/resources/lena.jpg" );
+        imageshrink::ImageAverage    imageAverage( imagejfif );
+        imageshrink::ImageVariance   imageVariance( imagejfif, imageAverage );
+        imageshrink::ImageCovariance imageCovariance( imagejfif, imageAverage, imagejfif, imageAverage );
+        imageshrink::ImageJfif       imagejfif2( imageCovariance );
         imagejfif2.storeInFile( "test.jpg" );
     }
 
