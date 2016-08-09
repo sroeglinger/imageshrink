@@ -18,6 +18,24 @@ void ImageCollection::addImage( stringConstShrdPtr name, ImageInterfaceShrdPtr i
     }
 }
 
+ImageInterfaceShrdPtr ImageCollection::getImage( const std::string & name ) const
+{
+    const auto ret = m_stringImageMap.find( name );
+    if( ret == m_stringImageMap.end() )
+    {
+        return ImageInterfaceShrdPtr();
+    }
+    else
+    {
+        return ret->second;
+    }
+}
+
+ImageInterfaceShrdPtr ImageCollection::getImage( stringConstShrdPtr name ) const
+{
+    return getImage( *name );
+}
+
 void ImageCollection::removeImage( const std::string & name, ImageInterfaceShrdPtr & image )
 {
     auto search = m_stringImageMap.find( name );

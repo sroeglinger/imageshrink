@@ -53,6 +53,9 @@ class ImageCollection
         void addImage( const std::string & name, ImageInterfaceShrdPtr image );
         void addImage( stringConstShrdPtr name, ImageInterfaceShrdPtr image );
 
+        ImageInterfaceShrdPtr getImage( const std::string & name ) const;
+        ImageInterfaceShrdPtr getImage( stringConstShrdPtr name ) const;
+
         void removeImage( const std::string & name, ImageInterfaceShrdPtr & image );
         void removeImage( stringConstShrdPtr name, ImageInterfaceShrdPtr & image );
         void removeImage( const std::string & name );

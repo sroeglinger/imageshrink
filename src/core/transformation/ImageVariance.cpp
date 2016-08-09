@@ -111,9 +111,10 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
     int bytesPerLine = image.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
 
-    for( int xNew = 0; xNew < newWidth; ++xNew )
+    #pragma omp parallel for
+    for( int yNew = 0; yNew < newHeight; ++yNew )
     {
-        for( int yNew = 0; yNew < newHeight; ++yNew )
+        for( int xNew = 0; xNew < newWidth; ++xNew )
         {
             int sumCh1 = 0;
             int sumCh2 = 0;

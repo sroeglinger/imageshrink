@@ -12,10 +12,12 @@
 #include <log4cxx/consoleappender.h>
 
 
+#include "ImageDummy.h"
 #include "ImageJfif.h"
 #include "ImageAverage.h"
 #include "ImageVariance.h"
-#include "ImageCovariance.h"
+#include "ImageCollection.h"
+#include "ImageDSSIM.h"
 
 // Define static logger variable
 log4cxx::LoggerPtr loggerMain           ( log4cxx::Logger::getLogger( "main" ) );
@@ -50,8 +52,9 @@ int main( int argc, const char* argv[] )
         loggerImage->addAppender          ( defaultAppender );
         loggerTransformation->addAppender ( defaultAppender );
 
-        auto logLevel = log4cxx::Level::getDebug();
+        // auto logLevel = log4cxx::Level::getDebug();
         // auto logLevel = log4cxx::Level::getInfo();
+        auto logLevel = log4cxx::Level::getWarn();
         
         loggerMain->setLevel           ( logLevel );  // Log level set to DEBUG
         loggerImage->setLevel          ( logLevel );   // Log level set to INFO
@@ -74,12 +77,49 @@ int main( int argc, const char* argv[] )
         // LOG4CXX_ERROR( loggerMain, "this is a error message, something serious is happening." );
         // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
 
-        imageshrink::ImageJfif       imagejfif( "/home/wast/Documents/test/test/resources/lena.jpg" );
-        imageshrink::ImageAverage    imageAverage( imagejfif );
-        imageshrink::ImageVariance   imageVariance( imagejfif, imageAverage );
-        imageshrink::ImageCovariance imageCovariance( imagejfif, imageAverage, imagejfif, imageAverage );
-        imageshrink::ImageJfif       imagejfif2( imageCovariance );
-        imagejfif2.storeInFile( "test.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test.jpg" );
+        imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test2.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/lena.jpg" );
+        
+        imageshrink::ImageAverage    image1Average;
+        imageshrink::ImageVariance   image1Variance;
+        imageshrink::ImageJfif       imagejfif2;
+        imageshrink::ImageAverage    image2Average;
+        imageshrink::ImageVariance   image2Variance;
+
+        #pragma omp parallel sections
+        {
+            #pragma omp section
+            {
+                image1Average = imageshrink::ImageAverage( imagejfif1 );
+                image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
+            }
+
+            #pragma omp section
+            {
+                imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ 65 );
+                image2Average = imageshrink::ImageAverage( imagejfif2 );
+                image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
+            }
+        }
+
+        imageshrink::ImageCollection collection1;
+        collection1.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif1 ) ) );
+        collection1.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Average ) ) );
+        collection1.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Variance ) ) );
+
+        imageshrink::ImageCollection collection2;
+        collection2.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif2 ) ) );
+        collection2.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Average ) ) );
+        collection2.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Variance ) ) );
+
+        imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
+
+
+        LOG4CXX_WARN( loggerMain, "DSSIM = " << imageDSSIM.getDssim() );
+        
+        // imageshrink::ImageJfif(image1Average).storeInFile( "image1Average.jpg" );
+        // imageshrink::ImageJfif(image1Variance).storeInFile( "image1Variance.jpg" );
     }
 
 

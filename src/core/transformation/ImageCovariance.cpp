@@ -24,6 +24,12 @@ ImageCovariance::ImageCovariance()
     reset();
 }
 
+ImageCovariance::ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2 )
+: ImageCovariance( *image1, *averageImage1, *image2, *averageImage2 )
+{
+    // nothing
+}
+
 ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
@@ -56,12 +62,13 @@ ImageCovariance ImageCovariance::calcCovarianceImage( const ImageInterface & ima
     ImageCovariance ret;
     const int averaging = 8;
 
-    // check original image
+    // collect buffers
     ImageBufferShrdPtr imageBuffer1    = image1.getImageBuffer();
     ImageBufferShrdPtr imageAvgBuffer1 = averageImage1.getImageBuffer();
     ImageBufferShrdPtr imageBuffer2    = image2.getImageBuffer();
     ImageBufferShrdPtr imageAvgBuffer2 = averageImage2.getImageBuffer();
 
+    // check original image
     if(    ( !imageBuffer1 )
         || ( !imageAvgBuffer1 )
         || ( !imageBuffer2 )
@@ -121,9 +128,10 @@ ImageCovariance ImageCovariance::calcCovarianceImage( const ImageInterface & ima
     int bytesPerLine = image1.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
 
-    for( int xNew = 0; xNew < newWidth; ++xNew )
+    #pragma omp parallel for
+    for( int yNew = 0; yNew < newHeight; ++yNew )
     {
-        for( int yNew = 0; yNew < newHeight; ++yNew )
+        for( int xNew = 0; xNew < newWidth; ++xNew )
         {
             int sumCh1 = 0;
             int sumCh2 = 0;
@@ -144,19 +152,19 @@ ImageCovariance ImageCovariance::calcCovarianceImage( const ImageInterface & ima
                     ch1_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 0 ];
                     int ch1_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
                     ch1_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 0 ];
-                    sumCh1  += ch1_1 * ch1_2;
+                    sumCh1    += ch1_1 * ch1_2;
 
                     int ch2_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
                     ch2_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 1 ];
                     int ch2_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
                     ch2_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 1 ];
-                    sumCh2  += ch2_1 * ch2_2;
+                    sumCh2    += ch2_1 * ch2_2;
 
                     int ch3_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
                     ch3_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 2 ];
                     int ch3_2  = imageBuffer2->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
                     ch3_2     -= imageAvgBuffer2->image[ xNewByteOffset + yNewByteOffset + 2 ];
-                    sumCh3  += ch3_1 * ch3_2;
+                    sumCh3    += ch3_1 * ch3_2;
                 }
             }
 

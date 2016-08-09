@@ -26,6 +26,7 @@ class ImageCovariance
     //********** (DE/CON)STRUCTORS **********
     public:
         ImageCovariance();
+        ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2 );
         ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 );
         virtual ~ImageCovariance() {}
 

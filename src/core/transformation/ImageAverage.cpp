@@ -105,9 +105,10 @@ ImageAverage ImageAverage::calcAverageImage( const ImageInterface & image )
     int bytesPerLine = image.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
 
-    for( int xNew = 0; xNew < newWidth; ++xNew )
+    #pragma omp parallel for
+    for( int yNew = 0; yNew < newHeight; ++yNew )
     {
-        for( int yNew = 0; yNew < newHeight; ++yNew )
+        for( int xNew = 0; xNew < newWidth; ++xNew )
         {
             int sumAvgCh1 = 0;
             int sumAvgCh2 = 0;

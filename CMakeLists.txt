@@ -30,8 +30,9 @@ endforeach()
 #set compiler
 #set(CMAKE_CXX_COMPILER "g++")
 #set(CMAKE_CC_COMPILER "gcc")
-set(CMAKE_CXX_FLAGS "-O0 -ggdb -fno-omit-frame-pointer -ffast-math -rdynamic -Wall -Wold-style-cast -Woverloaded-virtual")
-#set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual")
+# set(CMAKE_CXX_FLAGS "-O0 -ggdb -fno-omit-frame-pointer -ffast-math -rdynamic -Wall -Wold-style-cast -Woverloaded-virtual")
+set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp")
+# set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual")
 
 #print configuration
 message(STATUS "")
