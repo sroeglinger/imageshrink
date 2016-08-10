@@ -65,8 +65,8 @@ class ImageJfif
         virtual void reset();
 
         // own functions
-        ImageJfif getCompressedDecompressedImage( int quality );
-        void storeInFile( const std::string & path );
+        ImageJfif getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
+        void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444 );
 
     protected:
 

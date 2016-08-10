@@ -110,7 +110,7 @@ void ImageJfif::loadImage( const std::string & path )
     m_height                 = image.m_height;
 }
 
-void ImageJfif::storeInFile( const std::string & path )
+void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceSubsampling::VALUE cs )
 {    
     if( !m_imageBuffer )
     {
@@ -119,7 +119,7 @@ void ImageJfif::storeInFile( const std::string & path )
     }
 
     // compress image
-    ImageBufferShrdPtr compressedImage = compress( *this, /*quality*/ 85, ChrominanceSubsampling::CS_444 );
+    ImageBufferShrdPtr compressedImage = compress( *this, quality, cs );
 
     // write new image
     LOG4CXX_INFO( loggerImage, "write to file ..." );
@@ -186,16 +186,16 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     // decompress image
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ..." );
 
-    tjRet = tjDecompress2(
+    tjRet = tjDecompressToYUV2(
         jpegDecompressor, 
         reinterpret_cast<const unsigned char*>( compressedImage->image ), 
         compressedImage->size, 
         imageBuffer->image,
         width, 
-        0/*pitch*/, 
+        /*pad*/ 4,
         height, 
-        tjOutputPixelFormat, 
-        TJFLAG_FASTDCT
+        // tjOutputPixelFormat, 
+        TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
     );
 
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ... done" );
@@ -236,18 +236,17 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
 
     LOG4CXX_INFO( loggerImage, "compress image ..." );
 
-    tjRet = tjCompress2(
+    tjRet = tjCompressFromYUV(
         jpegCompressor,
         reinterpret_cast<const unsigned char*>( notCompressed.m_imageBuffer->image ),
         notCompressed.m_width,
-        /*pitch*/ 0,
+        /*pad*/ 4,
         notCompressed.m_height,
-        TJPF_RGB,
+        jpegSubsamp,
         &compressedImageBuffer,
         &jpegSize,
-        jpegSubsamp,
         quality,
-        TJFLAG_FASTDCT
+        TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
     );
 
     LOG4CXX_INFO( loggerImage, "compress image ... done" );
@@ -269,9 +268,9 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     return ret;
 }
 
-ImageJfif ImageJfif::getCompressedDecompressedImage( int quality )
+ImageJfif ImageJfif::getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs )
 {
-    ImageBufferShrdPtr compressedImage   = compress( *this, quality );
+    ImageBufferShrdPtr compressedImage   = compress( *this, quality, cs );
     ImageJfif          decompressedImage = decompress( compressedImage );
     return decompressedImage;
 }

@@ -22,6 +22,7 @@ ImageDSSIM::ImageDSSIM()
 , m_width( 0 )
 , m_height( 0 )
 , m_dssim( 0.0 )
+, m_dssimPeak( 0.0 )
 , m_dssimValid( false )
 {
     reset();
@@ -35,6 +36,7 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
 , m_width( 0 )
 , m_height( 0 )
 , m_dssim( 0.0 )
+, m_dssimPeak( 0.0 )
 , m_dssimValid( false )
 {
     reset();
@@ -47,6 +49,7 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
     m_width                  = dssim.m_width;
     m_height                 = dssim.m_height;
     m_dssim                  = dssim.m_dssim;
+    m_dssimPeak              = dssim.m_dssimPeak;
     m_dssimValid             = dssim.m_dssimValid;
 }
 
@@ -56,6 +59,11 @@ void ImageDSSIM::reset()
     m_colorspace = Colorspace::UNKNOWN;
     m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
     m_imageBuffer.reset();
+    m_width = 0;
+    m_height = 0;
+    m_dssim = 0.0;
+    m_dssimPeak = 0.0;
+    m_dssimValid = 0.0;
 }
 
 ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 )
@@ -178,8 +186,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1,
 
     int bytesPerLine = width * bytesPerPixel;
     double dssimSum = 0.0;
+    double dssimPeak = -1.0;
 
-    #pragma omp parallel for reduction(+:dssimSum)
+    #pragma omp parallel for reduction(+:dssimSum) reduction(max:dssimPeak)
     for( int y = 0; y < height; ++y )
     {
         double dssimLineSum = 0.0;
@@ -207,6 +216,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1,
 
             newImageBuffer->image[ xByteOffset + yByteOffset + 0 ] = dssim * ssimL;
             dssimLineSum += dssim;
+
+            if( dssim > dssimPeak ) 
+                dssimPeak = dssim;
         }
 
         dssimSum += ( dssimLineSum / static_cast<double>(width) );
@@ -222,6 +234,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1,
     ret.m_width                  = width;
     ret.m_height                 = height;
     ret.m_dssim                  = dssimSum / static_cast<double>(height);
+    ret.m_dssimPeak              = dssimPeak;
     ret.m_dssimValid             = true;
 
     return ret;
@@ -229,16 +242,22 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1,
 
 double ImageDSSIM::getDssim()
 {
-
-
     if( !m_dssimValid )
     {
         LOG4CXX_FATAL( loggerTransformation, "dssim value is NOT valid!!!" );
     }
 
-
-
     return m_dssim;
+}
+
+double ImageDSSIM::getDssimPeak()
+{
+    if( !m_dssimValid )
+    {
+        LOG4CXX_FATAL( loggerTransformation, "dssimPeak value is NOT valid!!!" );
+    }
+    
+    return m_dssimPeak;
 }
 
 } //namespace imageshrink

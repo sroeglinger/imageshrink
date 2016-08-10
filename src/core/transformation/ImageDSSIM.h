@@ -49,6 +49,7 @@ class ImageDSSIM
         int                           m_height;
 
         double                        m_dssim;
+        double                        m_dssimPeak;
         bool                          m_dssimValid;
 
     //********** METHODS **********
@@ -65,6 +66,7 @@ class ImageDSSIM
 
         // own functions
         double getDssim();
+        double getDssimPeak();
 
     protected:
 

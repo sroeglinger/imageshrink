@@ -87,39 +87,47 @@ int main( int argc, const char* argv[] )
         imageshrink::ImageAverage    image2Average;
         imageshrink::ImageVariance   image2Variance;
 
-        #pragma omp parallel sections
-        {
-            #pragma omp section
-            {
-                image1Average = imageshrink::ImageAverage( imagejfif1 );
-                image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
-            }
-
-            #pragma omp section
-            {
-                imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ 65 );
-                image2Average = imageshrink::ImageAverage( imagejfif2 );
-                image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
-            }
-        }
+        image1Average = imageshrink::ImageAverage( imagejfif1 );
+        image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
 
         imageshrink::ImageCollection collection1;
         collection1.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif1 ) ) );
         collection1.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Average ) ) );
         collection1.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Variance ) ) );
 
-        imageshrink::ImageCollection collection2;
-        collection2.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif2 ) ) );
-        collection2.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Average ) ) );
-        collection2.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Variance ) ) );
+        double dssim = 0.0;
+        double dssimPeak = 0.0;
+        int quality = 85;
+        ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444;
+        while(    ( dssim < 50.0e-6 ) 
+               && ( dssimPeak < 8800.0e-6 )
+               && ( quality > 20 ) )
+        {
+            imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
+            image2Average = imageshrink::ImageAverage( imagejfif2 );
+            image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
 
-        imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
+            imageshrink::ImageCollection collection2;
+            collection2.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif2 ) ) );
+            collection2.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Average ) ) );
+            collection2.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Variance ) ) );
 
+            imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
 
-        LOG4CXX_WARN( loggerMain, "DSSIM = " << imageDSSIM.getDssim() );
+            dssim = imageDSSIM.getDssim();
+            dssimPeak = imageDSSIM.getDssimPeak();
+            LOG4CXX_WARN( loggerMain, 
+                "DSSIM = " 
+                << dssim 
+                << "; DSSIM Peak = " 
+                << dssimPeak 
+                << "; quality = " << quality );
+
+            quality -= 1;
+        }
         
-        // imageshrink::ImageJfif(image1Average).storeInFile( "image1Average.jpg" );
-        // imageshrink::ImageJfif(image1Variance).storeInFile( "image1Variance.jpg" );
+        imagejfif1.storeInFile( "out.jpg", quality, cs );
+
     }
 
 
