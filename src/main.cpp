@@ -97,8 +97,8 @@ int main( int argc, const char* argv[] )
 
         double dssim = 0.0;
         double dssimPeak = 0.0;
-        int quality = 85;
-        ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444;
+        int quality = 75;
+        ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
         while(    ( dssim < 50.0e-6 ) 
                && ( dssimPeak < 8800.0e-6 )
                && ( quality > 20 ) )

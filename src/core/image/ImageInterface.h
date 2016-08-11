@@ -9,6 +9,7 @@
 #include "enumPixelFormat.h"
 #include "enumColorspace.h"
 #include "enumBitsPerPixelAndChannel.h"
+#include "enumChrominanceSubsampling.h"
 #include "ImageBuffer.h"
 
 namespace imageshrink
@@ -46,6 +47,7 @@ class ImageInterface
         virtual PixelFormat::VALUE getPixelFormat() const = 0;
         virtual Colorspace::VALUE getColorspace() const = 0;
         virtual BitsPerPixelAndChannel::VALUE getBitsPerPixelAndChannel() const = 0;
+        virtual ChrominanceSubsampling::VALUE getChrominanceSubsampling() const = 0;
         virtual ImageBufferShrdPtr getImageBuffer() const = 0;
         virtual int getWidth() const = 0;
         virtual int getHeight() const = 0;

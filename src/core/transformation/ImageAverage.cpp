@@ -17,6 +17,7 @@ ImageAverage::ImageAverage()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -34,6 +35,7 @@ ImageAverage::ImageAverage( const ImageInterface & image )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -44,6 +46,7 @@ ImageAverage::ImageAverage( const ImageInterface & image )
     m_pixelFormat            = avg.m_pixelFormat;
     m_colorspace             = avg.m_colorspace;
     m_bitsPerPixelAndChannel = avg.m_bitsPerPixelAndChannel;
+    m_chrominanceSubsampling = avg.m_chrominanceSubsampling;
     m_imageBuffer            = avg.m_imageBuffer;
     m_width                  = avg.m_width;
     m_height                 = avg.m_height;
@@ -54,6 +57,7 @@ void ImageAverage::reset()
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
     m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
+    m_chrominanceSubsampling = ChrominanceSubsampling::UNKNOWN;
     m_imageBuffer.reset();
 }
 
@@ -143,6 +147,7 @@ ImageAverage ImageAverage::calcAverageImage( const ImageInterface & image )
     ret.m_pixelFormat            = image.getPixelFormat();
     ret.m_colorspace             = image.getColorspace();
     ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = image.getChrominanceSubsampling();
     ret.m_imageBuffer            = newImageBuffer;
     ret.m_width                  = newWidth;
     ret.m_height                 = newHeight;

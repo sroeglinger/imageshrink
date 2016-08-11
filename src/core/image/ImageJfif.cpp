@@ -20,6 +20,7 @@ ImageJfif::ImageJfif()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -37,6 +38,7 @@ ImageJfif::ImageJfif( const std::string & path )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -49,6 +51,7 @@ ImageJfif::ImageJfif( const ImageInterface & image )
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -56,6 +59,7 @@ ImageJfif::ImageJfif( const ImageInterface & image )
     m_pixelFormat            = image.getPixelFormat();
     m_colorspace             = image.getColorspace();
     m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    m_chrominanceSubsampling = image.getChrominanceSubsampling();
     m_imageBuffer            = image.getImageBuffer();  //TODO: deep copy
     m_width                  = image.getWidth();
     m_height                 = image.getHeight();
@@ -72,6 +76,7 @@ void ImageJfif::reset()
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
     m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
+    m_chrominanceSubsampling = ChrominanceSubsampling::UNKNOWN;
     m_imageBuffer.reset();
 }
 
@@ -105,6 +110,7 @@ void ImageJfif::loadImage( const std::string & path )
     m_pixelFormat            = image.m_pixelFormat;
     m_colorspace             = image.m_colorspace;
     m_bitsPerPixelAndChannel = image.m_bitsPerPixelAndChannel;
+    m_chrominanceSubsampling = image.m_chrominanceSubsampling;
     m_imageBuffer            = image.m_imageBuffer;
     m_width                  = image.m_width;
     m_height                 = image.m_height;
@@ -163,6 +169,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
         ret.m_colorspace             = convertTjJpegColorspace( jpegColorspace );
         ret.m_pixelFormat            = convertTjPixelFormat( tjOutputPixelFormat );
         ret.m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::BITS_8;
+        ret.m_chrominanceSubsampling = convertTjJpegSubsamp( jpegSubsamp );
         ret.m_width                  = width;
         ret.m_height                 = height;
 
@@ -192,7 +199,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
         compressedImage->size, 
         imageBuffer->image,
         width, 
-        /*pad*/ 4,
+        /*pad*/ TJ_PAD,
         height, 
         // tjOutputPixelFormat, 
         TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
@@ -221,8 +228,13 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     const int jpegSubsamp = convert2Tj( cs );
     int tjRet = 0;
 
+
+
+    ImageJfif image4Compression = convertChrominanceSubsampling( notCompressed, cs );
+
+
     // check image
-    if( !notCompressed.m_imageBuffer )
+    if( !image4Compression.m_imageBuffer )
     {
         LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
         return ret;
@@ -231,17 +243,17 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     // compress jpeg
     tjhandle jpegCompressor = tjInitCompress();
 
-    long unsigned int jpegSize = tjBufSize( notCompressed.m_width, notCompressed.m_height, jpegSubsamp );
+    long unsigned int jpegSize = tjBufSize( image4Compression.m_width, image4Compression.m_height, jpegSubsamp );
     unsigned char* compressedImageBuffer = tjAlloc( jpegSize );
 
     LOG4CXX_INFO( loggerImage, "compress image ..." );
 
     tjRet = tjCompressFromYUV(
         jpegCompressor,
-        reinterpret_cast<const unsigned char*>( notCompressed.m_imageBuffer->image ),
-        notCompressed.m_width,
-        /*pad*/ 4,
-        notCompressed.m_height,
+        reinterpret_cast<const unsigned char*>( image4Compression.m_imageBuffer->image ),
+        image4Compression.m_width,
+        /*pad*/ TJ_PAD,
+        image4Compression.m_height,
         jpegSubsamp,
         &compressedImageBuffer,
         &jpegSize,
@@ -267,6 +279,223 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
 
     return ret;
 }
+
+ImageJfif ImageJfif::convertChrominanceSubsampling( const ImageJfif & image, ChrominanceSubsampling::VALUE cs )
+{
+    ImageJfif ret;
+    bool done = false;
+
+    // check image
+    if( !image.m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+        return ret;
+    }
+
+    // early return if nothing has to be done
+    if( image.getChrominanceSubsampling() == cs )
+    {
+        return image;
+    }
+
+    // change chrominance subsampling
+    if( image.getChrominanceSubsampling() == ChrominanceSubsampling::CS_444 )
+    {
+        switch( cs )
+        {
+            case ChrominanceSubsampling::CS_420: ret = convertChrominanceSubsampling_444to420( image ); done = true; break;
+            default: 
+                /* nothing */ 
+                break;
+        }
+    }
+
+    if( !done )
+    {
+        LOG4CXX_ERROR( loggerImage, "chrominance subsampling not converted" );
+    }
+
+    return ret;
+}
+
+ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & image )
+{
+    ImageJfif ret;
+
+    // check image
+    if( !image.m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+        return ret;
+    }
+
+    // preparation
+    const int width      = image.getWidth();
+    const int height     = image.getHeight();
+    const int subsampNew = convert2Tj(ChrominanceSubsampling::CS_420);
+    const int subsampOld = convert2Tj(ChrominanceSubsampling::CS_444);
+
+    const unsigned long yuvPlanarBufferSize = tjBufSizeYUV2( width, /*pad*/ TJ_PAD, height, subsampNew );
+    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( yuvPlanarBufferSize ) );
+    ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
+
+    const int width0New = tjPlaneWidth( 0 /*0 = Y*/,    width, subsampNew );
+    const int width1New = tjPlaneWidth( 1 /*1 = U/Cb*/, width, subsampNew );
+    const int width2New = tjPlaneWidth( 2 /*2 = V/Cr*/, width, subsampNew );
+
+    const int width0Old = tjPlaneWidth( 0 /*0 = Y*/,    width, subsampOld );
+    const int width1Old = tjPlaneWidth( 1 /*1 = U/Cb*/, width, subsampOld );
+    const int width2Old = tjPlaneWidth( 2 /*2 = V/Cr*/, width, subsampOld );
+
+    const int height0New = tjPlaneHeight( 0 /*0 = Y*/,    height, subsampNew );
+    const int height1New = tjPlaneHeight( 1 /*1 = U/Cb*/, height, subsampNew );
+    const int height2New = tjPlaneHeight( 2 /*2 = V/Cr*/, height, subsampNew );
+
+    const int height0Old = tjPlaneHeight( 0 /*0 = Y*/,    height, subsampOld );
+    const int height1Old = tjPlaneHeight( 1 /*1 = U/Cb*/, height, subsampOld );
+    const int height2Old = tjPlaneHeight( 2 /*2 = V/Cr*/, height, subsampOld );
+
+    const int stride0New = linePadding( width0New );
+    const int stride1New = linePadding( width1New );
+    const int stride2New = linePadding( width2New );
+
+    const int stride0Old = linePadding( width0Old );
+    const int stride1Old = linePadding( width1Old );
+    const int stride2Old = linePadding( width2Old );
+
+    const unsigned long planeSize0New = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, stride0New, height, subsampNew );
+    const unsigned long planeSize1New = tjPlaneSizeYUV( 1 /*1 = U/Cb*/, width, stride1New, height, subsampNew );
+    const unsigned long planeSize2New = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, stride2New, height, subsampNew );
+
+    const unsigned long planeSize0Old = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, stride0Old, height, subsampOld );
+    const unsigned long planeSize1Old = tjPlaneSizeYUV( 1 /*1 = U/Cb*/, width, stride1Old, height, subsampOld );
+    const unsigned long planeSize2Old = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, stride2Old, height, subsampOld );
+
+
+    if( ( planeSize0New + planeSize1New + planeSize2New ) != yuvPlanarBufferSize )
+    {
+        LOG4CXX_ERROR( loggerImage, "buffersize mismatch" );
+        return ret;
+    }
+
+    // if( planeSize0New != planeSize0Old )
+    // {
+    //     LOG4CXX_ERROR( loggerImage, 
+    //         "buffersize mismatch; " 
+    //         << "planeSize0New ("
+    //         << planeSize0New
+    //         << ") != planeSize0Old ("
+    //         << planeSize0Old
+    //         << ")"
+    //     );
+    //     return ret;
+    // }    
+
+    unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
+    unsigned char * const plane1New = &imageBufferNew->image[ planeSize0New ];
+    unsigned char * const plane2New = &imageBufferNew->image[ planeSize0New + planeSize1New ];
+
+    const unsigned char * const plane0Old = &imageBufferOld->image[ 0 ];
+    const unsigned char * const plane1Old = &imageBufferOld->image[ planeSize0Old ];
+    const unsigned char * const plane2Old = &imageBufferOld->image[ planeSize0Old + planeSize1Old ];
+
+    #pragma omp parallel sections
+    {
+        // copy chroma
+        #pragma omp section
+        {
+            std::memcpy( plane0New, plane0Old, planeSize0New );
+        }
+
+        // create U/Cb Plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = stride1New;
+            const int bytesPerOldLine = stride1Old;
+
+            for( int y = 0; y < height1New; ++y )
+            {
+                const int yOld = y * 2;
+
+                for( int x = 0; x < width1New; ++x )
+                {
+                    const int xOld = x * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_0_1 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_1 = bytesPerOldLine * ( yOld + 1 );
+                    const int xOldByteOffset_1_0 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_1_1 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_1 = bytesPerOldLine * ( yOld + 1 );
+
+                    int sum = 0;
+                    sum += plane1Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane1Old[ xOldByteOffset_1_0 + yOldByteOffset_1_0 ];
+                    sum += plane1Old[ xOldByteOffset_0_1 + yOldByteOffset_0_1 ];
+                    sum += plane1Old[ xOldByteOffset_1_1 + yOldByteOffset_1_1 ];
+
+                    const int xNewByteOffset = bytesPerPixel * x;
+                    const int yNewByteOffset = bytesPerNewLine * y;
+
+                    plane1New[ xNewByteOffset + yNewByteOffset ] = sum / 4;
+                }
+            }
+        }
+
+        // create V/Cr Plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = stride2New;
+            const int bytesPerOldLine = stride2Old;
+
+            for( int y = 0; y < height2New; ++y )
+            {
+                const int yOld = y * 2;
+
+                for( int x = 0; x < width2New; ++x )
+                {
+                    const int xOld = x * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_0_1 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_1 = bytesPerOldLine * ( yOld + 1 );
+                    const int xOldByteOffset_1_0 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_1_1 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_1 = bytesPerOldLine * ( yOld + 1 );
+
+                    int sum = 0;
+                    sum += plane2Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane2Old[ xOldByteOffset_1_0 + yOldByteOffset_1_0 ];
+                    sum += plane2Old[ xOldByteOffset_0_1 + yOldByteOffset_0_1 ];
+                    sum += plane2Old[ xOldByteOffset_1_1 + yOldByteOffset_1_1 ];
+
+                    const int xNewByteOffset = bytesPerPixel * x;
+                    const int yNewByteOffset = bytesPerNewLine * y;
+
+                    plane2New[ xNewByteOffset + yNewByteOffset ] = sum / 4;
+                }
+            }
+        }
+    }
+
+    // collect information
+    ret.m_pixelFormat = image.getPixelFormat();
+    ret.m_colorspace = image.getColorspace();
+    ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = convertTjJpegSubsamp( subsampNew );
+    ret.m_imageBuffer = imageBufferNew;
+    ret.m_width = width;
+    ret.m_height = height;
+
+    return ret;
+}
+
 
 ImageJfif ImageJfif::getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs )
 {
@@ -337,6 +566,19 @@ int ImageJfif::convert2Tj( ChrominanceSubsampling::VALUE cs )
             LOG4CXX_INFO( loggerImage, "There is no TurboJpeg Value for " << ChrominanceSubsampling::toString( cs ) << "." );
             return TJSAMP_444;
     }    
+}
+
+int ImageJfif::linePadding( int width )
+{
+    const int mod = width % TJ_PAD;
+    if( mod == 0 )
+    {
+        return width;
+    }
+    else
+    {
+        return width + ( TJ_PAD - mod );
+    }
 }
 
 } //namespace imageshrink

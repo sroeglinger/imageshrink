@@ -43,6 +43,7 @@ class ImageAverage
         PixelFormat::VALUE            m_pixelFormat;
         Colorspace::VALUE             m_colorspace;
         BitsPerPixelAndChannel::VALUE m_bitsPerPixelAndChannel;
+        ChrominanceSubsampling::VALUE m_chrominanceSubsampling;
 
         ImageBufferShrdPtr            m_imageBuffer;
         int                           m_width;
@@ -54,6 +55,7 @@ class ImageAverage
         virtual PixelFormat::VALUE getPixelFormat() const { return m_pixelFormat; }
         virtual Colorspace::VALUE getColorspace() const { return m_colorspace; }
         virtual BitsPerPixelAndChannel::VALUE getBitsPerPixelAndChannel() const { return m_bitsPerPixelAndChannel; }
+        virtual ChrominanceSubsampling::VALUE getChrominanceSubsampling() const { return m_chrominanceSubsampling; }
         virtual ImageBufferShrdPtr getImageBuffer() const { return m_imageBuffer; }
         virtual int getWidth() const { return m_width; }
         virtual int getHeight() const { return m_height; }

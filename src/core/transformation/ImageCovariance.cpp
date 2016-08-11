@@ -17,6 +17,7 @@ ImageCovariance::ImageCovariance()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -34,6 +35,7 @@ ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInte
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -44,6 +46,7 @@ ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInte
     m_pixelFormat            = var.m_pixelFormat;
     m_colorspace             = var.m_colorspace;
     m_bitsPerPixelAndChannel = var.m_bitsPerPixelAndChannel;
+    m_chrominanceSubsampling = var.m_chrominanceSubsampling;
     m_imageBuffer            = var.m_imageBuffer;
     m_width                  = var.m_width;
     m_height                 = var.m_height;
@@ -54,6 +57,7 @@ void ImageCovariance::reset()
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
     m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
+    m_chrominanceSubsampling = ChrominanceSubsampling::UNKNOWN;
     m_imageBuffer.reset();
 }
 
@@ -181,6 +185,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage( const ImageInterface & ima
     ret.m_pixelFormat            = image1.getPixelFormat();
     ret.m_colorspace             = image1.getColorspace();
     ret.m_bitsPerPixelAndChannel = image1.getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = image1.getChrominanceSubsampling();
     ret.m_imageBuffer            = newImageBuffer;
     ret.m_width                  = newWidth;
     ret.m_height                 = newHeight;

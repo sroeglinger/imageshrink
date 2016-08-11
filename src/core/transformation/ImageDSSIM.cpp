@@ -18,6 +18,7 @@ ImageDSSIM::ImageDSSIM()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -32,6 +33,7 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
+, m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
@@ -45,6 +47,7 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
     m_pixelFormat            = dssim.m_pixelFormat;
     m_colorspace             = dssim.m_colorspace;
     m_bitsPerPixelAndChannel = dssim.m_bitsPerPixelAndChannel;
+    m_chrominanceSubsampling = dssim.m_chrominanceSubsampling;
     m_imageBuffer            = dssim.m_imageBuffer;
     m_width                  = dssim.m_width;
     m_height                 = dssim.m_height;
@@ -58,6 +61,7 @@ void ImageDSSIM::reset()
     m_pixelFormat = PixelFormat::UNKNOWN;
     m_colorspace = Colorspace::UNKNOWN;
     m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::UNKNOWN;
+    m_chrominanceSubsampling = ChrominanceSubsampling::UNKNOWN;
     m_imageBuffer.reset();
     m_width = 0;
     m_height = 0;
@@ -230,6 +234,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage( const ImageCollection & imageCollection1,
     ret.m_pixelFormat            = image1Average->getPixelFormat();
     ret.m_colorspace             = image1Average->getColorspace();
     ret.m_bitsPerPixelAndChannel = image1Average->getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = image1Average->getChrominanceSubsampling();
     ret.m_imageBuffer            = newImageBuffer;
     ret.m_width                  = width;
     ret.m_height                 = height;
