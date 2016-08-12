@@ -9,7 +9,7 @@ struct PixelFormat
         UNKNOWN,
         RGB,
         BGR,
-        YCbCr,
+        YCbCr_Planar,
         RGBX,
         BGRX,
         XBGR,
@@ -26,21 +26,21 @@ struct PixelFormat
     {
         switch( value )
         {
-            case UNKNOWN: return "UNKNOWN";
-            case RGB:     return "RGB";
-            case BGR:     return "BGR";
-            case YCbCr:   return "YCbCr";
-            case RGBX:    return "RGBX";
-            case BGRX:    return "BGRX";
-            case XBGR:    return "XBGR";
-            case XRGB:    return "XRGB";
-            case GRAY:    return "GRAY";
-            case RGBA:    return "RGBA";
-            case BGRA:    return "BGRA";
-            case ABGR:    return "ABGR";
-            case ARGB:    return "ARGB";
-            case CMYK:    return "CMYK";
-            default:      return "PixelFormat ???";
+            case UNKNOWN:      return "UNKNOWN";
+            case RGB:          return "RGB";
+            case BGR:          return "BGR";
+            case YCbCr_Planar: return "YCbCr_Planaer";
+            case RGBX:         return "RGBX";
+            case BGRX:         return "BGRX";
+            case XBGR:         return "XBGR";
+            case XRGB:         return "XRGB";
+            case GRAY:         return "GRAY";
+            case RGBA:         return "RGBA";
+            case BGRA:         return "BGRA";
+            case ABGR:         return "ABGR";
+            case ARGB:         return "ARGB";
+            case CMYK:         return "CMYK";
+            default:           return "PixelFormat ???";
         }
     }
 
@@ -48,21 +48,21 @@ struct PixelFormat
     {
         switch( value )
         {
-            case UNKNOWN: return 0;
-            case RGB:     return 3;
-            case BGR:     return 3;
-            case YCbCr:   return 3;
-            case RGBX:    return 4;
-            case BGRX:    return 4;
-            case XBGR:    return 4;
-            case XRGB:    return 4;
-            case GRAY:    return 1;
-            case RGBA:    return 4;
-            case BGRA:    return 4;
-            case ABGR:    return 4;
-            case ARGB:    return 4;
-            case CMYK:    return 4;
-            default:      return 0;
+            case UNKNOWN:      return 0;
+            case RGB:          return 3;
+            case BGR:          return 3;
+            case YCbCr_Planar: return 3;
+            case RGBX:         return 4;
+            case BGRX:         return 4;
+            case XBGR:         return 4;
+            case XRGB:         return 4;
+            case GRAY:         return 1;
+            case RGBA:         return 4;
+            case BGRA:         return 4;
+            case ABGR:         return 4;
+            case ARGB:         return 4;
+            case CMYK:         return 4;
+            default:           return 0;
         }
     }
 };

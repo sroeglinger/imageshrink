@@ -6,6 +6,7 @@
 
 // include own headers
 #include "ImageJfif.h"
+#include "PlanarImageCalc.h"
 
 // include 3rd party headers
 #include <turbojpeg.h>
@@ -141,7 +142,6 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
 {
     ImageJfif ret;
     int tjRet = 0;
-    const int tjOutputPixelFormat = TJPF_RGB;
 
     // check
     if( !compressedImage )
@@ -167,7 +167,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     if( tjRet == 0 )
     {
         ret.m_colorspace             = convertTjJpegColorspace( jpegColorspace );
-        ret.m_pixelFormat            = convertTjPixelFormat( tjOutputPixelFormat );
+        ret.m_pixelFormat            = PixelFormat::YCbCr_Planar;
         ret.m_bitsPerPixelAndChannel = BitsPerPixelAndChannel::BITS_8;
         ret.m_chrominanceSubsampling = convertTjJpegSubsamp( jpegSubsamp );
         ret.m_width                  = width;
@@ -185,10 +185,8 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     }
 
     // allocate buffer for decompressed image
-    const int bytesPerPixel = PixelFormat::channelsPerPixel(ret.m_pixelFormat) * BitsPerPixelAndChannel::bytesPerChannel(ret.m_bitsPerPixelAndChannel);
-    const int nofPixels     = width * height;
-    const int bufferSize    = bytesPerPixel * nofPixels;
-    ImageBufferShrdPtr imageBuffer = ImageBufferShrdPtr( new ImageBuffer( bufferSize ) );
+    const unsigned long yuvPlanarBufferSize = tjBufSizeYUV2( width, /*pad*/ TJ_PAD, height, jpegSubsamp );
+    ImageBufferShrdPtr imageBuffer = ImageBufferShrdPtr( new ImageBuffer( yuvPlanarBufferSize ) );
 
     // decompress image
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ..." );
@@ -332,49 +330,17 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     // preparation
     const int width      = image.getWidth();
     const int height     = image.getHeight();
-    const int subsampNew = convert2Tj(ChrominanceSubsampling::CS_420);
-    const int subsampOld = convert2Tj(ChrominanceSubsampling::CS_444);
 
-    const unsigned long yuvPlanarBufferSize = tjBufSizeYUV2( width, /*pad*/ TJ_PAD, height, subsampNew );
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( yuvPlanarBufferSize ) );
+
+    PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
+    PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
+
+    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
 
-    const int width0New = tjPlaneWidth( 0 /*0 = Y*/,    width, subsampNew );
-    const int width1New = tjPlaneWidth( 1 /*1 = U/Cb*/, width, subsampNew );
-    const int width2New = tjPlaneWidth( 2 /*2 = V/Cr*/, width, subsampNew );
-
-    const int width0Old = tjPlaneWidth( 0 /*0 = Y*/,    width, subsampOld );
-    const int width1Old = tjPlaneWidth( 1 /*1 = U/Cb*/, width, subsampOld );
-    const int width2Old = tjPlaneWidth( 2 /*2 = V/Cr*/, width, subsampOld );
-
-    const int height0New = tjPlaneHeight( 0 /*0 = Y*/,    height, subsampNew );
-    const int height1New = tjPlaneHeight( 1 /*1 = U/Cb*/, height, subsampNew );
-    const int height2New = tjPlaneHeight( 2 /*2 = V/Cr*/, height, subsampNew );
-
-    const int height0Old = tjPlaneHeight( 0 /*0 = Y*/,    height, subsampOld );
-    const int height1Old = tjPlaneHeight( 1 /*1 = U/Cb*/, height, subsampOld );
-    const int height2Old = tjPlaneHeight( 2 /*2 = V/Cr*/, height, subsampOld );
-
-    const int stride0New = linePadding( width0New );
-    const int stride1New = linePadding( width1New );
-    const int stride2New = linePadding( width2New );
-
-    const int stride0Old = linePadding( width0Old );
-    const int stride1Old = linePadding( width1Old );
-    const int stride2Old = linePadding( width2Old );
-
-    const unsigned long planeSize0New = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, stride0New, height, subsampNew );
-    const unsigned long planeSize1New = tjPlaneSizeYUV( 1 /*1 = U/Cb*/, width, stride1New, height, subsampNew );
-    const unsigned long planeSize2New = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, stride2New, height, subsampNew );
-
-    const unsigned long planeSize0Old = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, stride0Old, height, subsampOld );
-    const unsigned long planeSize1Old = tjPlaneSizeYUV( 1 /*1 = U/Cb*/, width, stride1Old, height, subsampOld );
-    const unsigned long planeSize2Old = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, stride2Old, height, subsampOld );
-
-
-    if( ( planeSize0New + planeSize1New + planeSize2New ) != yuvPlanarBufferSize )
+    if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
     {
-        LOG4CXX_ERROR( loggerImage, "buffersize mismatch" );
+        LOG4CXX_ERROR( loggerImage, "buffer size mismatch" );
         return ret;
     }
 
@@ -392,33 +358,33 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     // }    
 
     unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
-    unsigned char * const plane1New = &imageBufferNew->image[ planeSize0New ];
-    unsigned char * const plane2New = &imageBufferNew->image[ planeSize0New + planeSize1New ];
+    unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
+    unsigned char * const plane2New = &imageBufferNew->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     const unsigned char * const plane0Old = &imageBufferOld->image[ 0 ];
-    const unsigned char * const plane1Old = &imageBufferOld->image[ planeSize0Old ];
-    const unsigned char * const plane2Old = &imageBufferOld->image[ planeSize0Old + planeSize1Old ];
+    const unsigned char * const plane1Old = &imageBufferOld->image[ planaImageOld.planeSize0 ];
+    const unsigned char * const plane2Old = &imageBufferOld->image[ planaImageOld.planeSize0 + planaImageOld.planeSize1 ];
 
     #pragma omp parallel sections
     {
         // copy chroma
         #pragma omp section
         {
-            std::memcpy( plane0New, plane0Old, planeSize0New );
+            std::memcpy( plane0New, plane0Old, planaImageNew.planeSize0 );
         }
 
         // create U/Cb Plane
         #pragma omp section
         {
             const int bytesPerPixel = 1;
-            const int bytesPerNewLine = stride1New;
-            const int bytesPerOldLine = stride1Old;
+            const int bytesPerNewLine = planaImageNew.stride1;
+            const int bytesPerOldLine = planaImageOld.stride1;
 
-            for( int y = 0; y < height1New; ++y )
+            for( int y = 0; y < planaImageNew.height1; ++y )
             {
                 const int yOld = y * 2;
 
-                for( int x = 0; x < width1New; ++x )
+                for( int x = 0; x < planaImageNew.width1; ++x )
                 {
                     const int xOld = x * 2;
 
@@ -449,14 +415,14 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
         #pragma omp section
         {
             const int bytesPerPixel = 1;
-            const int bytesPerNewLine = stride2New;
-            const int bytesPerOldLine = stride2Old;
+            const int bytesPerNewLine = planaImageNew.stride2;
+            const int bytesPerOldLine = planaImageOld.stride2;
 
-            for( int y = 0; y < height2New; ++y )
+            for( int y = 0; y < planaImageNew.height2; ++y )
             {
                 const int yOld = y * 2;
 
-                for( int x = 0; x < width2New; ++x )
+                for( int x = 0; x < planaImageNew.width2; ++x )
                 {
                     const int xOld = x * 2;
 
@@ -488,7 +454,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     ret.m_pixelFormat = image.getPixelFormat();
     ret.m_colorspace = image.getColorspace();
     ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
-    ret.m_chrominanceSubsampling = convertTjJpegSubsamp( subsampNew );
+    ret.m_chrominanceSubsampling = ChrominanceSubsampling::CS_420;
     ret.m_imageBuffer = imageBufferNew;
     ret.m_width = width;
     ret.m_height = height;
@@ -537,7 +503,7 @@ PixelFormat::VALUE ImageJfif::convertTjPixelFormat( int value )
     {
         case TJPF_RGB:   return PixelFormat::RGB;
         case TJPF_BGR:   return PixelFormat::BGR;
-        // case TJPF_YCbCr: return PixelFormat::YCbCr;
+        // case TJPF_YCbCr: return PixelFormat::YCbCr_Planar;
         case TJPF_RGBX:  return PixelFormat::RGBX;
         case TJPF_BGRX:  return PixelFormat::BGRX;
         case TJPF_XBGR:  return PixelFormat::XBGR;
@@ -549,35 +515,6 @@ PixelFormat::VALUE ImageJfif::convertTjPixelFormat( int value )
         case TJPF_ARGB:  return PixelFormat::ARGB;
         case TJPF_CMYK:  return PixelFormat::CMYK;
         default:      return PixelFormat::UNKNOWN;
-    }
-}
-
-int ImageJfif::convert2Tj( ChrominanceSubsampling::VALUE cs )
-{
-    switch( cs )
-    {
-        case ChrominanceSubsampling::CS_444: return TJSAMP_444;
-        case ChrominanceSubsampling::CS_422: return TJSAMP_422;
-        case ChrominanceSubsampling::CS_420: return TJSAMP_420;
-        case ChrominanceSubsampling::Gray:   return TJSAMP_GRAY;
-        case ChrominanceSubsampling::CS_440: return TJSAMP_440;
-        case ChrominanceSubsampling::CS_411: return TJSAMP_411;
-        default: 
-            LOG4CXX_INFO( loggerImage, "There is no TurboJpeg Value for " << ChrominanceSubsampling::toString( cs ) << "." );
-            return TJSAMP_444;
-    }    
-}
-
-int ImageJfif::linePadding( int width )
-{
-    const int mod = width % TJ_PAD;
-    if( mod == 0 )
-    {
-        return width;
-    }
-    else
-    {
-        return width + ( TJ_PAD - mod );
     }
 }
 

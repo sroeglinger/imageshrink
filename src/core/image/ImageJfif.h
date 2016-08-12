@@ -78,15 +78,12 @@ class ImageJfif
         ChrominanceSubsampling::VALUE convertTjJpegSubsamp( int value );
         Colorspace::VALUE convertTjJpegColorspace( int value );
         PixelFormat::VALUE convertTjPixelFormat( int value );
-        int convert2Tj( ChrominanceSubsampling::VALUE cs );
 
         ImageJfif decompress( ImageBufferShrdPtr compressedImage );
         ImageBufferShrdPtr compress( const ImageJfif & notCompressed, int quality = 85, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
 
         ImageJfif convertChrominanceSubsampling( const ImageJfif & image, ChrominanceSubsampling::VALUE cs );
         ImageJfif convertChrominanceSubsampling_444to420( const ImageJfif & image );
-
-        int linePadding( int width );
 
 }; //class
 
