@@ -5,6 +5,9 @@
 // include own headers
 #include "ImageVariance.h"
 
+// include application headers
+#include "PlanarImageCalc.h"
+
 // include 3rd party headers
 #include <log4cxx/logger.h>
 
@@ -35,7 +38,22 @@ ImageVariance::ImageVariance( const ImageInterface & image, const ImageInterface
 , m_height( 0 )
 {
     reset();
-    ImageVariance var = calcVarianceImage( image, averageImage );
+    ImageVariance var;
+
+    switch( image.getPixelFormat() )
+    {
+        case PixelFormat::RGB:
+            var = calcVarianceImage_RGB( image, averageImage );
+            break;
+
+        case PixelFormat::YCbCr_Planar:
+            var = calcVarianceImage_YUV( image, averageImage );
+            break;
+
+        default:
+            LOG4CXX_ERROR( loggerTransformation, "unknown pixelformat " << PixelFormat::toString( image.getPixelFormat() ) );
+            break;
+    }
 
     m_pixelFormat            = var.m_pixelFormat;
     m_colorspace             = var.m_colorspace;
@@ -55,7 +73,7 @@ void ImageVariance::reset()
     m_imageBuffer.reset();
 }
 
-ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, const ImageInterface & averageImage )
+ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image, const ImageInterface & averageImage )
 {
     ImageVariance ret;
     const int averaging = 8;
@@ -69,6 +87,26 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
       )
     {
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+        ret.reset();
+        return ret;
+    }
+
+    // check colorspace
+    if(    ( image.getColorspace() != Colorspace::RGB )
+        || ( averageImage.getColorspace() != Colorspace::RGB )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "colorspace is not RGB" );
+        ret.reset();
+        return ret;
+    }
+
+    // check pixel format
+    if(    ( image.getPixelFormat() != PixelFormat::RGB )
+        || ( averageImage.getPixelFormat() != PixelFormat::RGB )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "pixel-format is not RGB" );
         ret.reset();
         return ret;
     }
@@ -88,7 +126,7 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
 
     if( bufferSize != imageBuffer->size )
     {
-        LOG4CXX_ERROR( loggerTransformation, "buffer size missmatch" );
+        LOG4CXX_ERROR( loggerTransformation, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
         ret.reset();
         return ret;
     }
@@ -110,7 +148,7 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
 
     ImageBufferShrdPtr newImageBuffer = ImageBufferShrdPtr( new ImageBuffer( newBufferSize ) );
 
-    LOG4CXX_INFO( loggerTransformation, "averaging ..." );
+    LOG4CXX_INFO( loggerTransformation, "determine variance ..." );
 
     int bytesPerLine = image.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
@@ -156,7 +194,7 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
         }
     }
 
-    LOG4CXX_INFO( loggerTransformation, "averaging ... done" );
+    LOG4CXX_INFO( loggerTransformation, "determine variance ... done" );
 
     // collect data
     ret.m_pixelFormat            = image.getPixelFormat();
@@ -166,6 +204,286 @@ ImageVariance ImageVariance::calcVarianceImage( const ImageInterface & image, co
     ret.m_imageBuffer            = newImageBuffer;
     ret.m_width                  = newWidth;
     ret.m_height                 = newHeight;
+
+    return ret;
+}
+
+ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image, const ImageInterface & averageImage )
+{
+    ImageVariance ret;
+    const int averaging = 8;
+
+    // check original image
+    ImageBufferShrdPtr imageBuffer = image.getImageBuffer();
+
+    if( !imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+        ret.reset();
+        return ret;
+    }
+
+    // check colorspace
+    if(    ( image.getColorspace() != Colorspace::YCbCr )
+        || ( averageImage.getColorspace() != Colorspace::YCbCr )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "colorspace is not YCbCr" );
+        ret.reset();
+        return ret;
+    }
+
+    // check pixel format
+    if(    ( image.getPixelFormat() != PixelFormat::YCbCr_Planar )
+        || ( averageImage.getPixelFormat() != PixelFormat::YCbCr_Planar )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "pixel-format is not YCbCr_Planar" );
+        ret.reset();
+        return ret;
+    }
+
+    // preparation
+    const ChrominanceSubsampling::VALUE cs = image.getChrominanceSubsampling();
+
+    int chromaAveragingX = averaging;
+    int chromaAveragingY = averaging;
+
+    switch( cs )
+    {
+        case ChrominanceSubsampling::CS_444:
+            break;
+
+        case ChrominanceSubsampling::CS_422:
+            chromaAveragingX = averaging / 2;
+            chromaAveragingY = averaging / 1;
+            break;
+
+        case ChrominanceSubsampling::CS_420:
+            chromaAveragingX = averaging / 2;
+            chromaAveragingY = averaging / 2;
+            break;
+
+        default:
+            LOG4CXX_ERROR( loggerTransformation, "not supported chrominance subsampling " << ChrominanceSubsampling::toString( cs ) );
+            ret.reset();
+            return ret;
+            break;
+    }
+
+    // check chrominance subsampling
+    if(    ( image.getChrominanceSubsampling() != cs )
+        && ( averageImage.getChrominanceSubsampling() != cs )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "chrominance subsampling mismatch" );
+        ret.reset();
+        return ret;
+    }
+
+    // preparation
+
+    const int oldWidth  = image.getWidth();
+    const int oldHeight = image.getHeight();
+    
+    const int newWidth  = oldWidth / averaging;
+    const int newHeight = oldHeight / averaging;
+
+    PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( newWidth, newHeight, cs, TJ_PAD );
+    PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( oldWidth, oldHeight, cs, TJ_PAD );
+
+    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
+    ImageBufferShrdPtr imageAvgBuffer = averageImage.getImageBuffer();
+
+    if(    ( !imageBufferNew )
+        || ( !imageBufferOld )
+        || ( !imageAvgBuffer )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+        ret.reset();
+        return ret;
+    }
+
+    if(    ( averageImage.getWidth() != image.getWidth() / averaging )
+        || ( averageImage.getHeight() != image.getHeight() / averaging )
+      )
+    {
+        LOG4CXX_ERROR( loggerTransformation, "size missmatch between original image and average image" );
+        ret.reset();
+        return ret;
+    }
+
+    // if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
+    // {
+    //     LOG4CXX_ERROR( loggerTransformation, ""
+    //         << planaImageNew.planeSize0 << std::endl
+    //         << planaImageNew.planeSize1 << std::endl
+    //         << planaImageNew.planeSize2 << std::endl
+    //         << planaImageNew.bufferSize << std::endl
+    //     );
+    //     LOG4CXX_ERROR( loggerTransformation, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+    //     return ret;
+    // }
+
+
+    LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
+                                        << planaImageOld.bufferSize 
+                                        << " Bytes"
+                                        << "; new image buffer size: "
+                                        << planaImageNew.bufferSize
+                                        << " Bytes"
+    );
+
+    LOG4CXX_INFO( loggerTransformation, "determine variance ... " );
+
+    unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
+    unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
+    unsigned char * const plane2New = &imageBufferNew->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+
+    const unsigned char * const plane0Old = &imageBufferOld->image[ 0 ];
+    const unsigned char * const plane1Old = &imageBufferOld->image[ planaImageOld.planeSize0 ];
+    const unsigned char * const plane2Old = &imageBufferOld->image[ planaImageOld.planeSize0 + planaImageOld.planeSize1 ];
+
+    const unsigned char * const plane0Avg = &imageAvgBuffer->image[ 0 ];
+    const unsigned char * const plane1Avg = &imageAvgBuffer->image[ planaImageNew.planeSize0 ];
+    const unsigned char * const plane2Avg = &imageAvgBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+
+    // determine new image
+    #pragma omp parallel sections
+    {
+        // create chroma plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = planaImageNew.stride0;
+            const int bytesPerOldLine = planaImageOld.stride0;
+
+            #pragma omp parallel for
+            for( int yNew = 0; yNew < planaImageNew.height0; ++yNew )
+            {
+                for( int xNew = 0; xNew < planaImageNew.width0; ++xNew )
+                {
+                    int sum = 0;
+
+                    const int xNewByteOffset = bytesPerPixel * xNew;
+                    const int yNewByteOffset = bytesPerNewLine * yNew;
+
+                    for( int yOldOffset = 0; yOldOffset < averaging; ++yOldOffset )
+                    {
+                        const int yOld = yNew * averaging + yOldOffset;
+
+                        for( int xOldOffset = 0; xOldOffset < averaging; ++xOldOffset )
+                        {
+                            const int xOld = xNew * averaging + xOldOffset;
+
+                            const int xOldByteOffset = bytesPerPixel * xOld;
+                            const int yOldByteOffset = bytesPerOldLine * yOld;
+
+                            int value  = plane0Old[ xOldByteOffset + yOldByteOffset ];
+                            value     -= plane0Avg[ xNewByteOffset + yNewByteOffset ];
+                            sum       += ( value * value );
+                        }
+                    }
+
+                    const int avgAvg = averaging * averaging;
+                    plane0New[ xNewByteOffset + yNewByteOffset ] = sum / avgAvg;
+                }
+            }
+        }
+
+        // create U/Cb plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = planaImageNew.stride1;
+            const int bytesPerOldLine = planaImageOld.stride1;
+
+            #pragma omp parallel for
+            for( int yNew = 0; yNew < planaImageNew.height1; ++yNew )
+            {
+                for( int xNew = 0; xNew < planaImageNew.width1; ++xNew )
+                {
+                    int sum = 0;
+
+                    const int xNewByteOffset = bytesPerPixel * xNew;
+                    const int yNewByteOffset = bytesPerNewLine * yNew;
+
+                    for( int yOldOffset = 0; yOldOffset < chromaAveragingY; ++yOldOffset )
+                    {
+                        const int yOld = yNew * chromaAveragingY + yOldOffset;
+
+                        for( int xOldOffset = 0; xOldOffset < chromaAveragingX; ++xOldOffset )
+                        {
+                            const int xOld = xNew * chromaAveragingX + xOldOffset;
+
+                            const int xOldByteOffset = bytesPerPixel * xOld;
+                            const int yOldByteOffset = bytesPerOldLine * yOld;
+
+                            int value  = plane1Old[ xOldByteOffset + yOldByteOffset ];
+                            value     -= plane1Avg[ xNewByteOffset + yNewByteOffset ];
+                            sum       += ( value * value );
+                        }
+                    }
+
+                    const int avgAvg = chromaAveragingX * chromaAveragingY;
+                    plane1New[ xNewByteOffset + yNewByteOffset ] = sum / avgAvg;
+                }
+            }
+        }
+
+        // create V/Cr plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = planaImageNew.stride2;
+            const int bytesPerOldLine = planaImageOld.stride2;
+
+            #pragma omp parallel for
+            for( int yNew = 0; yNew < planaImageNew.height2; ++yNew )
+            {
+                for( int xNew = 0; xNew < planaImageNew.width2; ++xNew )
+                {
+                    int sum = 0;
+
+                    const int xNewByteOffset = bytesPerPixel * xNew;
+                    const int yNewByteOffset = bytesPerNewLine * yNew;
+
+                    for( int yOldOffset = 0; yOldOffset < chromaAveragingY; ++yOldOffset )
+                    {
+                        const int yOld = yNew * chromaAveragingY + yOldOffset;
+
+                        for( int xOldOffset = 0; xOldOffset < chromaAveragingX; ++xOldOffset )
+                        {
+                            const int xOld = xNew * chromaAveragingX + xOldOffset;
+
+                            const int xOldByteOffset = bytesPerPixel * xOld;
+                            const int yOldByteOffset = bytesPerOldLine * yOld;
+
+                            int value  = plane2Old[ xOldByteOffset + yOldByteOffset ];
+                            value     -= plane2Avg[ xNewByteOffset + yNewByteOffset ];
+                            sum       += ( value * value );
+                        }
+                    }
+
+                    const int avgAvg = chromaAveragingX * chromaAveragingY;
+                    plane2New[ xNewByteOffset + yNewByteOffset ] = sum / avgAvg;
+                }
+            }
+        }
+    }
+
+    LOG4CXX_INFO( loggerTransformation, "determine variance ... done" );
+
+    // collect information
+    ret.m_pixelFormat = image.getPixelFormat();
+    ret.m_colorspace = image.getColorspace();
+    ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = cs;
+    ret.m_imageBuffer = imageBufferNew;
+    ret.m_width = newWidth;
+    ret.m_height = newHeight;
 
     return ret;
 }

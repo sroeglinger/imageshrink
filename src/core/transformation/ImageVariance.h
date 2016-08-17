@@ -68,7 +68,8 @@ class ImageVariance
 
     private:
 
-        ImageVariance calcVarianceImage( const ImageInterface & image, const ImageInterface & averageImage );
+        ImageVariance calcVarianceImage_RGB( const ImageInterface & image, const ImageInterface & averageImage );
+        ImageVariance calcVarianceImage_YUV( const ImageInterface & image, const ImageInterface & averageImage );
 
 }; //class
 

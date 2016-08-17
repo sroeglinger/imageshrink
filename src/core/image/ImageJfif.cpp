@@ -6,6 +6,8 @@
 
 // include own headers
 #include "ImageJfif.h"
+
+// include application headers
 #include "PlanarImageCalc.h"
 
 // include 3rd party headers
@@ -282,6 +284,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling( const ImageJfif & image, Chr
 {
     ImageJfif ret;
     bool done = false;
+    const ChrominanceSubsampling::VALUE csOld = image.getChrominanceSubsampling();
 
     // check image
     if( !image.m_imageBuffer )
@@ -291,17 +294,27 @@ ImageJfif ImageJfif::convertChrominanceSubsampling( const ImageJfif & image, Chr
     }
 
     // early return if nothing has to be done
-    if( image.getChrominanceSubsampling() == cs )
+    if( csOld == cs )
     {
         return image;
     }
 
     // change chrominance subsampling
-    if( image.getChrominanceSubsampling() == ChrominanceSubsampling::CS_444 )
+    if( csOld == ChrominanceSubsampling::CS_444 )
     {
         switch( cs )
         {
             case ChrominanceSubsampling::CS_420: ret = convertChrominanceSubsampling_444to420( image ); done = true; break;
+            default: 
+                /* nothing */ 
+                break;
+        }
+    }
+    else if( csOld == ChrominanceSubsampling::CS_420 )
+    {
+        switch( cs )
+        {
+            case ChrominanceSubsampling::CS_444: ret = convertChrominanceSubsampling_420to444( image ); done = true; break;
             default: 
                 /* nothing */ 
                 break;
@@ -331,18 +344,17 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     const int width      = image.getWidth();
     const int height     = image.getHeight();
 
-
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
 
     ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
 
-    if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
-    {
-        LOG4CXX_ERROR( loggerImage, "buffer size mismatch" );
-        return ret;
-    }
+    // if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
+    // {
+    //     LOG4CXX_ERROR( loggerImage, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+    //     return ret;
+    // }
 
     // if( planeSize0New != planeSize0Old )
     // {
@@ -462,6 +474,145 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     return ret;
 }
 
+ImageJfif ImageJfif::convertChrominanceSubsampling_420to444( const ImageJfif & image )
+{
+    ImageJfif ret;
+
+    // check image
+    if( !image.m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+        return ret;
+    }
+
+    // preparation
+    const int width      = image.getWidth();
+    const int height     = image.getHeight();
+
+    PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
+    PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
+
+    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
+
+    // if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
+    // {
+    //     LOG4CXX_ERROR( loggerImage, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+    //     return ret;
+    // }
+
+    // if( planeSize0New != planeSize0Old )
+    // {
+    //     LOG4CXX_ERROR( loggerImage, 
+    //         "buffersize mismatch; " 
+    //         << "planeSize0New ("
+    //         << planeSize0New
+    //         << ") != planeSize0Old ("
+    //         << planeSize0Old
+    //         << ")"
+    //     );
+    //     return ret;
+    // }    
+
+    unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
+    unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
+    unsigned char * const plane2New = &imageBufferNew->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+
+    const unsigned char * const plane0Old = &imageBufferOld->image[ 0 ];
+    const unsigned char * const plane1Old = &imageBufferOld->image[ planaImageOld.planeSize0 ];
+    const unsigned char * const plane2Old = &imageBufferOld->image[ planaImageOld.planeSize0 + planaImageOld.planeSize1 ];
+
+    #pragma omp parallel sections
+    {
+        // copy chroma
+        #pragma omp section
+        {
+            std::memcpy( plane0New, plane0Old, planaImageNew.planeSize0 );
+        }
+
+        // create U/Cb Plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = planaImageNew.stride1;
+            const int bytesPerOldLine = planaImageOld.stride1;
+
+            for( int y = 0; y < planaImageOld.height1; ++y )
+            {
+                for( int x = 0; x < planaImageOld.width1; ++x )
+                {
+                    const int xOldByteOffset = bytesPerPixel * x;
+                    const int yOldByteOffset = bytesPerOldLine * y;
+
+                    const unsigned char value = plane1Old[ xOldByteOffset + yOldByteOffset ];
+
+                    const int xNewByteOffset_0_0 = bytesPerPixel   * ( x * 2 + 0 );
+                    const int yNewByteOffset_0_0 = bytesPerNewLine * ( y * 2 + 0 );
+                    const int xNewByteOffset_0_1 = bytesPerPixel   * ( x * 2 + 0 );
+                    const int yNewByteOffset_0_1 = bytesPerNewLine * ( y * 2 + 1 );
+                    const int xNewByteOffset_1_0 = bytesPerPixel   * ( x * 2 + 1 );
+                    const int yNewByteOffset_1_0 = bytesPerNewLine * ( y * 2 + 0 );
+                    const int xNewByteOffset_1_1 = bytesPerPixel   * ( x * 2 + 1 );
+                    const int yNewByteOffset_1_1 = bytesPerNewLine * ( y * 2 + 1 );
+
+                    plane1New[ xNewByteOffset_0_0 + yNewByteOffset_0_0 ];
+                    plane1New[ xNewByteOffset_1_0 + yNewByteOffset_1_0 ];
+                    plane1New[ xNewByteOffset_0_1 + yNewByteOffset_0_1 ];
+                    plane1New[ xNewByteOffset_1_1 + yNewByteOffset_1_1 ];
+                }
+            }
+        }
+
+        // create V/Cr Plane
+        #pragma omp section
+        {
+            const int bytesPerPixel = 1;
+            const int bytesPerNewLine = planaImageNew.stride2;
+            const int bytesPerOldLine = planaImageOld.stride2;
+
+            for( int y = 0; y < planaImageOld.height2; ++y )
+            {
+                for( int x = 0; x < planaImageOld.width2; ++x )
+                {
+                    const int xOldByteOffset = bytesPerPixel * x;
+                    const int yOldByteOffset = bytesPerOldLine * y;
+
+                    const unsigned char value = plane2Old[ xOldByteOffset + yOldByteOffset ];
+
+                    const int xNewByteOffset_0_0 = bytesPerPixel   * ( x * 2 + 0 );
+                    const int yNewByteOffset_0_0 = bytesPerNewLine * ( y * 2 + 0 );
+                    const int xNewByteOffset_0_1 = bytesPerPixel   * ( x * 2 + 0 );
+                    const int yNewByteOffset_0_1 = bytesPerNewLine * ( y * 2 + 1 );
+                    const int xNewByteOffset_1_0 = bytesPerPixel   * ( x * 2 + 1 );
+                    const int yNewByteOffset_1_0 = bytesPerNewLine * ( y * 2 + 0 );
+                    const int xNewByteOffset_1_1 = bytesPerPixel   * ( x * 2 + 1 );
+                    const int yNewByteOffset_1_1 = bytesPerNewLine * ( y * 2 + 1 );
+
+                    plane2New[ xNewByteOffset_0_0 + yNewByteOffset_0_0 ];
+                    plane2New[ xNewByteOffset_1_0 + yNewByteOffset_1_0 ];
+                    plane2New[ xNewByteOffset_0_1 + yNewByteOffset_0_1 ];
+                    plane2New[ xNewByteOffset_1_1 + yNewByteOffset_1_1 ];
+                }
+            }
+        }
+    }
+
+    // collect information
+    ret.m_pixelFormat = image.getPixelFormat();
+    ret.m_colorspace = image.getColorspace();
+    ret.m_bitsPerPixelAndChannel = image.getBitsPerPixelAndChannel();
+    ret.m_chrominanceSubsampling = ChrominanceSubsampling::CS_444;
+    ret.m_imageBuffer = imageBufferNew;
+    ret.m_width = width;
+    ret.m_height = height;
+
+    return ret;
+}
+
+ImageJfif ImageJfif::getImageWithChrominanceSubsampling( ChrominanceSubsampling::VALUE cs )
+{
+    return convertChrominanceSubsampling( *this, cs );
+}
 
 ImageJfif ImageJfif::getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs )
 {

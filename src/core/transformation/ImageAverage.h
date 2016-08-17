@@ -69,7 +69,8 @@ class ImageAverage
 
     private:
 
-        ImageAverage calcAverageImage( const ImageInterface & image );
+        ImageAverage calcAverageImage_RGB( const ImageInterface & image );
+        ImageAverage calcAverageImage_YUV( const ImageInterface & image );
 
 }; //class
 

@@ -23,7 +23,6 @@ class ImageJfif
 {
     //********** PRELIMINARY **********
     public:
-        static const int TJ_PAD = 4;
 
     //********** (DE/CON)STRUCTORS **********
     public:
@@ -69,6 +68,7 @@ class ImageJfif
         // own functions
         ImageJfif getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
         void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444 );
+        ImageJfif getImageWithChrominanceSubsampling( ChrominanceSubsampling::VALUE cs );
 
     protected:
 
@@ -84,6 +84,7 @@ class ImageJfif
 
         ImageJfif convertChrominanceSubsampling( const ImageJfif & image, ChrominanceSubsampling::VALUE cs );
         ImageJfif convertChrominanceSubsampling_444to420( const ImageJfif & image );
+        ImageJfif convertChrominanceSubsampling_420to444( const ImageJfif & image );
 
 }; //class
 

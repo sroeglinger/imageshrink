@@ -52,9 +52,9 @@ int main( int argc, const char* argv[] )
         loggerImage->addAppender          ( defaultAppender );
         loggerTransformation->addAppender ( defaultAppender );
 
-        // auto logLevel = log4cxx::Level::getDebug();
+        auto logLevel = log4cxx::Level::getDebug();
         // auto logLevel = log4cxx::Level::getInfo();
-        auto logLevel = log4cxx::Level::getWarn();
+        // auto logLevel = log4cxx::Level::getWarn();
         
         loggerMain->setLevel           ( logLevel );  // Log level set to DEBUG
         loggerImage->setLevel          ( logLevel );   // Log level set to INFO
@@ -97,13 +97,14 @@ int main( int argc, const char* argv[] )
 
         double dssim = 0.0;
         double dssimPeak = 0.0;
-        int quality = 75;
+        int quality = 90;
         ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
         while(    ( dssim < 50.0e-6 ) 
                && ( dssimPeak < 8800.0e-6 )
                && ( quality > 20 ) )
         {
             imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
+            imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( ChrominanceSubsampling::CS_444 );
             image2Average = imageshrink::ImageAverage( imagejfif2 );
             image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
 

@@ -69,7 +69,8 @@ class ImageCovariance
 
     private:
 
-        ImageCovariance calcCovarianceImage( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 );
+        ImageCovariance calcCovarianceImage_RGB( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 );
+        ImageCovariance calcCovarianceImage_YUV( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 );
 
 }; //class
 

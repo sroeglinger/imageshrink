@@ -74,7 +74,8 @@ class ImageDSSIM
 
     private:
 
-        ImageDSSIM calcDSSIMImage( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 );
+        ImageDSSIM calcDSSIMImage_RGB( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 );
+        ImageDSSIM calcDSSIMImage_YUV( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 );
 
 }; //class
 

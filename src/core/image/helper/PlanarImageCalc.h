@@ -8,6 +8,8 @@
 namespace imageshrink
 {
 
+static const int TJ_PAD = 4;
+
 struct PlanarImageDesc
 {
     int bufferSize;
