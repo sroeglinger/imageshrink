@@ -31,11 +31,6 @@ foreach(element ${listOfCMakeLists})
     include_directories(${path})
 endforeach()
 
-#set compiler
-# set(CMAKE_CXX_COMPILER "g++")
-# set(CMAKE_CC_COMPILER "gcc")
-# set(CMAKE_CXX_FLAGS "-O0 -ggdb -fno-omit-frame-pointer -ffast-math -rdynamic -Wall -Wold-style-cast -Woverloaded-virtual")
-
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     # assume clang
     set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp-use-tls")
