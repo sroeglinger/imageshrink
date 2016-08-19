@@ -11,7 +11,7 @@ namespace imageshrink
 {
 
 // create convenient types
-class ImageBuffer;
+struct ImageBuffer;
 typedef std::shared_ptr<ImageBuffer> ImageBufferShrdPtr;
 typedef std::weak_ptr<ImageBuffer>   ImageBufferWkPtr;
 

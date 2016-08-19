@@ -18,7 +18,8 @@ typedef std::weak_ptr<ImageDummy>   ImageDummyWkPtr;
 
 // declaration
 class ImageDummy
-: public ImageInterface
+: public std::enable_shared_from_this<ImageDummy>
+, public ImageInterface
 {
     //********** PRELIMINARY **********
     public:

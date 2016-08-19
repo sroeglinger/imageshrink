@@ -18,7 +18,8 @@ typedef std::weak_ptr<ImageCovariance>   ImageCovarianceWkPtr;
 
 // declaration
 class ImageCovariance
-: public ImageInterface
+: public std::enable_shared_from_this<ImageCovariance>
+, public ImageInterface
 {
     //********** PRELIMINARY **********
     public:

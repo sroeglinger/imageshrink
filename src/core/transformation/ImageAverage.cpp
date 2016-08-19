@@ -137,7 +137,7 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
                                         << " Bytes"
     );
 
-    ImageBufferShrdPtr newImageBuffer = ImageBufferShrdPtr( new ImageBuffer( newBufferSize ) );
+    ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( newBufferSize );
 
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
 
@@ -258,7 +258,7 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( newWidth, newHeight, cs, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( oldWidth, oldHeight, cs, TJ_PAD );
 
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
 
     if(    ( !imageBufferNew )

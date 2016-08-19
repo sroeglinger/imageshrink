@@ -21,6 +21,7 @@ typedef std::weak_ptr<ImageCollection>   ImageCollectionWkPtr;
 
 // declaration
 class ImageCollection
+: public std::enable_shared_from_this<ImageCollection>
 {
     //********** PRELIMINARY **********
     public:

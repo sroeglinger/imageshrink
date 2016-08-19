@@ -18,7 +18,8 @@ typedef std::weak_ptr<ImageAverage>   ImageAverageWkPtr;
 
 // declaration
 class ImageAverage
-: public ImageInterface
+: public std::enable_shared_from_this<ImageAverage>
+, public ImageInterface
 {
     //********** PRELIMINARY **********
     public:

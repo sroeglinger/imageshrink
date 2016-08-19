@@ -19,7 +19,8 @@ typedef std::weak_ptr<ImageJfif>   ImageJfifWkPtr;
 
 // declaration
 class ImageJfif
-: public ImageInterface
+: public std::enable_shared_from_this<ImageJfif>
+, public ImageInterface
 {
     //********** PRELIMINARY **********
     public:

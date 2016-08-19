@@ -101,7 +101,7 @@ void ImageJfif::loadImage( const std::string & path )
     // read file
     LOG4CXX_INFO( loggerImage, "read JFIF file with " << length << " Bytes ..." );
 
-    ImageBufferShrdPtr compressedImage = ImageBufferShrdPtr( new ImageBuffer(jpegSize) );
+    ImageBufferShrdPtr compressedImage = std::make_shared<ImageBuffer>(jpegSize);
     ifs.read( reinterpret_cast<char*>( compressedImage->image ), length );
     ifs.close();
 
@@ -188,7 +188,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
 
     // allocate buffer for decompressed image
     const unsigned long yuvPlanarBufferSize = tjBufSizeYUV2( width, /*pad*/ TJ_PAD, height, jpegSubsamp );
-    ImageBufferShrdPtr imageBuffer = ImageBufferShrdPtr( new ImageBuffer( yuvPlanarBufferSize ) );
+    ImageBufferShrdPtr imageBuffer = std::make_shared<ImageBuffer>( yuvPlanarBufferSize );
 
     // decompress image
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ..." );
@@ -265,7 +265,7 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
 
     if( tjRet == 0 )
     {
-        ret = ImageBufferShrdPtr( new ImageBuffer(jpegSize) );
+        ret = std::make_shared<ImageBuffer>(jpegSize);
         std::memcpy( ret->image, compressedImageBuffer, jpegSize );
     }
     else
@@ -347,7 +347,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
 
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
 
     // if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )
@@ -492,7 +492,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_420to444( const ImageJfif & i
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
 
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
 
     // if( ( planaImageNew.planeSize0 + planaImageNew.planeSize1 + planaImageNew.planeSize2 ) != planaImageNew.bufferSize )

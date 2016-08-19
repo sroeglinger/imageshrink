@@ -168,7 +168,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
                                         << " Bytes"
     );
 
-    ImageBufferShrdPtr newImageBuffer = ImageBufferShrdPtr( new ImageBuffer( newBufferSize ) );
+    ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( newBufferSize );
 
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
 
@@ -346,7 +346,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( newWidth, newHeight, cs, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( oldWidth, oldHeight, cs, TJ_PAD );
 
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
     ImageBufferShrdPtr image1BufferOld = image1.getImageBuffer();
     ImageBufferShrdPtr image2BufferOld = image2.getImageBuffer();
     ImageBufferShrdPtr averageImage1BufferOld = averageImage1.getImageBuffer();

@@ -19,7 +19,8 @@ typedef std::weak_ptr<ImageDSSIM>   ImageDSSIMWkPtr;
 
 // declaration
 class ImageDSSIM
-: public ImageInterface
+: public std::enable_shared_from_this<ImageDSSIM>
+, public ImageInterface
 {
     //********** PRELIMINARY **********
     public:

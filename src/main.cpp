@@ -78,8 +78,9 @@ int main( int argc, const char* argv[] )
         // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
 
         // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test.jpg" );
-        imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test2.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test2.jpg" );
         // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/lena.jpg" );
+        imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/lena.jpg" );
         
         imageshrink::ImageAverage    image1Average;
         imageshrink::ImageVariance   image1Variance;
@@ -91,9 +92,9 @@ int main( int argc, const char* argv[] )
         image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
 
         imageshrink::ImageCollection collection1;
-        collection1.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif1 ) ) );
-        collection1.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Average ) ) );
-        collection1.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image1Variance ) ) );
+        collection1.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif1 ) );
+        collection1.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image1Average ) );
+        collection1.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image1Variance ) );
 
         double dssim = 0.0;
         double dssimPeak = 0.0;
@@ -109,9 +110,9 @@ int main( int argc, const char* argv[] )
             image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
 
             imageshrink::ImageCollection collection2;
-            collection2.addImage( "original", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( imagejfif2 ) ) );
-            collection2.addImage( "average",  imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Average ) ) );
-            collection2.addImage( "variance", imageshrink::ImageInterfaceShrdPtr( new imageshrink::ImageDummy( image2Variance ) ) );
+            collection2.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif2 ) );
+            collection2.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image2Average ) );
+            collection2.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image2Variance ) );
 
             imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
 

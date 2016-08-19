@@ -239,7 +239,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
     const int width  = image1Average->getWidth();
     const int height = image1Average->getHeight();
 
-    ImageBufferShrdPtr newImageBuffer = ImageBufferShrdPtr( new ImageBuffer( bufferSize ) );
+    ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( bufferSize );
 
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ..." );
 
@@ -441,7 +441,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
 
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, cs, TJ_PAD );
 
-    ImageBufferShrdPtr imageBufferNew = ImageBufferShrdPtr( new ImageBuffer( planaImageNew.bufferSize ) );
+    ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
 
     if(    ( !imageBufferNew )
         // || ( !imageBufferOld )
