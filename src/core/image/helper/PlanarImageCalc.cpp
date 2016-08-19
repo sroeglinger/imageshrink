@@ -34,9 +34,13 @@ PlanarImageDesc calcPlanaerImageDescForYUV( int width, int height, ChrominanceSu
     ret.stride1 = linePadding( ret.width1, padding );
     ret.stride2 = linePadding( ret.width2, padding );
 
-    ret.planeSize0 = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, ret.stride0, height, subsampNew );
-    ret.planeSize1 = tjPlaneSizeYUV( 1 /*1 = U/Cb*/, width, ret.stride1, height, subsampNew );
-    ret.planeSize2 = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, ret.stride2, height, subsampNew );
+    // ret.planeSize0 = tjPlaneSizeYUV( 0 /*0 = Y*/,    width, ret.stride0, height, subsampNew );
+    // ret.planeSize1 = tjPlaneSizeYUV( 1 1 = U/Cb, width, ret.stride1, height, subsampNew );
+    // ret.planeSize2 = tjPlaneSizeYUV( 2 /*2 = V/Cr*/, width, ret.stride2, height, subsampNew );
+
+    ret.planeSize0 = ret.stride0 * ret.height0;
+    ret.planeSize1 = ret.stride1 * ret.height1;
+    ret.planeSize2 = ret.stride2 * ret.height2;
 
     return ret;
 }
