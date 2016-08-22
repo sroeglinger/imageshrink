@@ -392,6 +392,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
             const int bytesPerNewLine = planaImageNew.stride1;
             const int bytesPerOldLine = planaImageOld.stride1;
 
+            // main part
             for( int y = 0; y < planaImageNew.height1; ++y )
             {
                 const int yOld = y * 2;
@@ -421,6 +422,76 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
                     plane1New[ xNewByteOffset + yNewByteOffset ] = sum / 4;
                 }
             }
+
+            // remaining part at the right side
+            if( ( planaImageNew.width1 * 2 ) > planaImageOld.width1 )
+            {
+                const int xOld = ( planaImageOld.width1 - 1 );
+
+                for( int y = 0; y < planaImageNew.height1; ++y )
+                {
+                    const int yOld = y * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_0_1 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_1 = bytesPerOldLine * ( yOld + 1 );
+
+                    int sum = 0;
+                    sum += plane1Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane1Old[ xOldByteOffset_0_1 + yOldByteOffset_0_1 ];
+                    
+                    const int xNewByteOffset = bytesPerPixel * ( planaImageNew.width1 - 1 );
+                    const int yNewByteOffset = bytesPerNewLine * y;
+
+                    plane1New[ xNewByteOffset + yNewByteOffset ] = sum / 2;
+                }
+            }
+
+            // remaining part at the bottom
+            if( ( planaImageNew.height1 * 2 ) > planaImageOld.height1 )
+            {
+                const int yOld = ( planaImageOld.height1 - 1 );
+
+                for( int x = 0; x < planaImageNew.width1; ++x )
+                {
+                    const int xOld = x * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_1_0 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_0 = bytesPerOldLine * ( yOld + 0 );
+
+                    int sum = 0;
+                    sum += plane1Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane1Old[ xOldByteOffset_1_0 + yOldByteOffset_1_0 ];
+
+                    const int xNewByteOffset = bytesPerPixel * x;
+                    const int yNewByteOffset = bytesPerNewLine * ( planaImageNew.height1 - 1 );
+
+                    plane1New[ xNewByteOffset + yNewByteOffset ] = sum / 2;
+                }
+            }
+
+            // remaining pixel at the bottom right
+            if(    ( ( planaImageNew.width1 * 2 ) > planaImageOld.width1 )
+                && ( ( planaImageNew.height1 * 2 ) > planaImageOld.height1 )
+              )
+            {
+                const int xOld = ( planaImageOld.width1 - 1 );
+                const int yOld = ( planaImageOld.height1 - 1 );
+
+                const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+
+                int sum = 0;
+                sum += plane1Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+
+                const int xNewByteOffset = bytesPerPixel * ( planaImageNew.width1 - 1 );
+                const int yNewByteOffset = bytesPerNewLine * ( planaImageNew.height1 - 1 ); 
+
+                plane1New[ xNewByteOffset + yNewByteOffset ] = sum;
+            }
         }
 
         // create V/Cr Plane
@@ -430,6 +501,7 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
             const int bytesPerNewLine = planaImageNew.stride2;
             const int bytesPerOldLine = planaImageOld.stride2;
 
+            // main part
             for( int y = 0; y < planaImageNew.height2; ++y )
             {
                 const int yOld = y * 2;
@@ -458,6 +530,76 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
 
                     plane2New[ xNewByteOffset + yNewByteOffset ] = sum / 4;
                 }
+            }
+
+            // remaining part at the right side
+            if( ( planaImageNew.width2 * 2 ) > planaImageOld.width2 )
+            {
+                const int xOld = ( planaImageOld.width2 - 1 );
+
+                for( int y = 0; y < planaImageNew.height2; ++y )
+                {
+                    const int yOld = y * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_0_1 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_1 = bytesPerOldLine * ( yOld + 1 );
+
+                    int sum = 0;
+                    sum += plane2Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane2Old[ xOldByteOffset_0_1 + yOldByteOffset_0_1 ];
+                    
+                    const int xNewByteOffset = bytesPerPixel * ( planaImageNew.width1 - 1 );
+                    const int yNewByteOffset = bytesPerNewLine * y;
+
+                    plane2New[ xNewByteOffset + yNewByteOffset ] = sum / 2;
+                }
+            }
+
+            // remaining part at the bottom
+            if( ( planaImageNew.height2 * 2 ) > planaImageOld.height2 )
+            {
+                const int yOld = ( planaImageOld.height2 - 1 );
+
+                for( int x = 0; x < planaImageNew.width2; ++x )
+                {
+                    const int xOld = x * 2;
+
+                    const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                    const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+                    const int xOldByteOffset_1_0 = bytesPerPixel *   ( xOld + 1 );
+                    const int yOldByteOffset_1_0 = bytesPerOldLine * ( yOld + 0 );
+
+                    int sum = 0;
+                    sum += plane2Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+                    sum += plane2Old[ xOldByteOffset_1_0 + yOldByteOffset_1_0 ];
+
+                    const int xNewByteOffset = bytesPerPixel * x;
+                    const int yNewByteOffset = bytesPerNewLine * ( planaImageNew.height2 - 1 );
+
+                    plane2New[ xNewByteOffset + yNewByteOffset ] = sum / 2;
+                }
+            }
+
+            // remaining pixel at the bottom right
+            if(    ( ( planaImageNew.width2 * 2 ) > planaImageOld.width2 )
+                && ( ( planaImageNew.height2 * 2 ) > planaImageOld.height2 )
+              )
+            {
+                const int xOld = ( planaImageOld.width2 - 1 );
+                const int yOld = ( planaImageOld.height2 - 1 );
+
+                const int xOldByteOffset_0_0 = bytesPerPixel *   ( xOld + 0 );
+                const int yOldByteOffset_0_0 = bytesPerOldLine * ( yOld + 0 );
+
+                int sum = 0;
+                sum += plane2Old[ xOldByteOffset_0_0 + yOldByteOffset_0_0 ];
+
+                const int xNewByteOffset = bytesPerPixel * ( planaImageNew.width2 - 1 );
+                const int yNewByteOffset = bytesPerNewLine * ( planaImageNew.height2 - 1 ); 
+
+                plane2New[ xNewByteOffset + yNewByteOffset ] = sum;
             }
         }
     }
