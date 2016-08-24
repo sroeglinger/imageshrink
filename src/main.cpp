@@ -186,29 +186,9 @@ int main( int argc, const char* argv[] )
         perror("Problem opening log4cxx config file");
     }
 
-
-
-
+    // reduce image size
     {
-        // int value = 5;
-
-        // LOG4CXX_TRACE( loggerMain, "this is a debug message for detailed code discovery. Value=" << value );
-        // LOG4CXX_DEBUG( loggerMain, "this is a debug message." );
-        // LOG4CXX_INFO ( loggerMain, "this is a info message, ignore. Value=" << value );
-        // LOG4CXX_WARN ( loggerMain, "this is a warn message, not too bad." );
-        // LOG4CXX_ERROR( loggerMain, "this is a error message, something serious is happening." );
-        // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
-
         imageshrink::ImageJfif imagejfif1( settings.inputFile );
-        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test2.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/lena.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/lena.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/gabi.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test_kl.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test2.jpg" );
-        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test3.jpg" );
         
         imageshrink::ImageAverage    image1Average;
         imageshrink::ImageVariance   image1Variance;
@@ -257,11 +237,6 @@ int main( int argc, const char* argv[] )
         }
         
         imagejfif1.storeInFile( settings.outputFile, quality, cs );
-        // imagejfif1.storeInFile( "image1_CS420.jpg", quality, ChrominanceSubsampling::CS_420 );
-        // imagejfif2.storeInFile( "image2_CS444.jpg", quality, ChrominanceSubsampling::CS_444 );
-        // imageshrink::ImageJfif( image1Average ).storeInFile( "image1Average.jpg", 100, ChrominanceSubsampling::CS_444 );
-        // imageshrink::ImageJfif( image1Variance ).storeInFile( "image1Variance.jpg", 100, ChrominanceSubsampling::CS_444 );
-
     }
 
 
