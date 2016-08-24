@@ -1,6 +1,7 @@
 
 #include <stdlib.h>
 #include <iostream>
+#include <string>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -24,14 +25,135 @@ log4cxx::LoggerPtr loggerMain           ( log4cxx::Logger::getLogger( "main" ) )
 log4cxx::LoggerPtr loggerImage          ( log4cxx::Logger::getLogger( "image" ) );
 log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
 
+struct Settings
+{
+    Settings()
+    : qualityMin( 50 )
+    , qualityMax( 85 )
+    , dssimAvgMax( 70.0e-6 )
+    , dssimPeakMax( 8900.0e-6 )
+    , inputFile()
+    , outputFile()
+    {}
+    
+    int    qualityMin;
+    int    qualityMax;
+    double dssimAvgMax;
+    double dssimPeakMax;
+
+    std::string inputFile;
+    std::string outputFile;
+};
+
+
+void printUsage()
+{
+    std::cout << "imageshrink [settings] inputFile outputFile" << std::endl;
+    std::cout << std::endl;
+    std::cout << "settings:" << std::endl;
+    std::cout << "    --min value           minimum jpeg quality" << std::endl;
+    std::cout << "    --max value           maximum jpeg quality" << std::endl;
+    std::cout << "    --dssimAvgMax value   maximum for the average DSSIM" << std::endl;
+    std::cout << "    --dssimPeakMax value  maximum for the peak DSSIM" << std::endl;
+}
+
+
 int main( int argc, const char* argv[] )
 {
-
     // Initialize variables
     log4cxx::AppenderPtr defaultAppender = nullptr;
     log4cxx::LayoutPtr   defaultLayout   = nullptr;
 
+    Settings settings;
+    
+    // parse arguments
+    {
+        int pos = 1;
+        
+        if( argc < 2 )
+        {
+            printUsage();
+            return EXIT_FAILURE;
+        }
+        
+        while( pos < argc )
+        {
+            const int nofRemainigArgs = argc - pos;
+            const std::string arg( argv[pos] );
+            bool somethingDone = false;
+            pos++;
+            
+            /* START debug */
+            // std::cout << "pos: "
+            //           << pos
+            //           << " arg: "
+            //           << arg.c_str()
+            //           << std::endl;
+            /* END debug */
+            
+            if( nofRemainigArgs == 1 )
+            {
+                settings.outputFile = arg;
+                somethingDone = true;
+            }
+            else if( nofRemainigArgs == 2 )
+            {
+                settings.inputFile = arg;
+                somethingDone = true;
+            }
+            else if( nofRemainigArgs > 2 )
+            {
+                if( arg == "--min" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    settings.qualityMin = std::stoi( value );
+                    
+                    somethingDone = true;
+                }
+                else if( arg == "--max" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    settings.qualityMax = std::stoi( value );
+                    
+                    somethingDone = true;
+                }
+                else if( arg == "--dssimAvgMax" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    settings.dssimAvgMax = std::stod( value );
+                    
+                    somethingDone = true;
+                }
+                else if( arg == "--dssimPeakMax" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    settings.dssimPeakMax = std::stod( value );
+                    
+                    somethingDone = true;
+                }
+            }
+            
+            if( !somethingDone )
+            {
+                printUsage();
+                return EXIT_FAILURE;
+            }
+        }
+    }
 
+
+
+
+
+    // configure logging
     struct stat fileStat;
     std::string log4cxxConfigFile = "Log4cxxConfig.xml";
     errno = 0;  // Set by stat() upon an error
@@ -77,10 +199,16 @@ int main( int argc, const char* argv[] )
         // LOG4CXX_ERROR( loggerMain, "this is a error message, something serious is happening." );
         // LOG4CXX_FATAL( loggerMain, "this is a fatal message!!!" );
 
+        imageshrink::ImageJfif imagejfif1( settings.inputFile );
         // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test.jpg" );
         // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/test2.jpg" );
         // imageshrink::ImageJfif       imagejfif1( "/home/wast/Documents/test/test/resources/lena.jpg" );
-        imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/lena.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/lena.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/gabi.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test_kl.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test2.jpg" );
+        // imageshrink::ImageJfif       imagejfif1( "/Users/wast/Documents/Projekte/Informatik/2016-08-06 - ImageShrink/test/resources/test3.jpg" );
         
         imageshrink::ImageAverage    image1Average;
         imageshrink::ImageVariance   image1Variance;
@@ -98,11 +226,11 @@ int main( int argc, const char* argv[] )
 
         double dssim = 0.0;
         double dssimPeak = 0.0;
-        int quality = 90;
+        int quality = settings.qualityMax;
         ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
-        while(    ( dssim < 50.0e-6 ) 
-               && ( dssimPeak < 8800.0e-6 )
-               && ( quality > 20 ) )
+        while(    ( dssim < settings.dssimAvgMax )
+               && ( dssimPeak < settings.dssimPeakMax )
+               && ( quality > settings.qualityMin ) )
         {
             imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
             imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( ChrominanceSubsampling::CS_444 );
@@ -128,7 +256,11 @@ int main( int argc, const char* argv[] )
             quality -= 1;
         }
         
-        imagejfif1.storeInFile( "out.jpg", quality, cs );
+        imagejfif1.storeInFile( settings.outputFile, quality, cs );
+        // imagejfif1.storeInFile( "image1_CS420.jpg", quality, ChrominanceSubsampling::CS_420 );
+        // imagejfif2.storeInFile( "image2_CS444.jpg", quality, ChrominanceSubsampling::CS_444 );
+        // imageshrink::ImageJfif( image1Average ).storeInFile( "image1Average.jpg", 100, ChrominanceSubsampling::CS_444 );
+        // imageshrink::ImageJfif( image1Variance ).storeInFile( "image1Variance.jpg", 100, ChrominanceSubsampling::CS_444 );
 
     }
 
