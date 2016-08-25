@@ -3,6 +3,7 @@
 #include <fstream>      // std::ifstream
 #include <limits>       // std::numeric_limits<...>::...
 #include <cstring>      // std::memcpy
+#include <stdio.h>      // required for jpeglib.h
 
 // include own headers
 #include "ImageJfif.h"
@@ -13,6 +14,11 @@
 // include 3rd party headers
 #include <turbojpeg.h>
 #include <log4cxx/logger.h>
+
+// stuff for libjpeg-turbo
+#include <jpeglib.h>
+#include <jerror.h>
+#include <setjmp.h>
 
 namespace imageshrink
 {
@@ -225,7 +231,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
 ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int quality, ChrominanceSubsampling::VALUE cs )
 {
     ImageBufferShrdPtr ret;
-    const int jpegSubsamp = convert2Tj( cs );
+//    const int jpegSubsamp = convert2Tj( cs );
     int tjRet = 0;
 
 
@@ -240,42 +246,102 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
         return ret;
     }
 
+
+
+
+
+
+
+
+
     // compress jpeg
-    tjhandle jpegCompressor = tjInitCompress();
+    // tjhandle jpegCompressor = tjInitCompress();
 
-    long unsigned int jpegSize = tjBufSize( image4Compression.m_width, image4Compression.m_height, jpegSubsamp );
-    unsigned char* compressedImageBuffer = tjAlloc( jpegSize );
+    // long unsigned int jpegSize = tjBufSize( image4Compression.m_width, image4Compression.m_height, jpegSubsamp );
+    // unsigned char* compressedImageBuffer = tjAlloc( jpegSize );
 
-    LOG4CXX_INFO( loggerImage, "compress image ..." );
+    // LOG4CXX_INFO( loggerImage, "compress image ..." );
 
-    tjRet = tjCompressFromYUV(
-        jpegCompressor,
-        reinterpret_cast<const unsigned char*>( image4Compression.m_imageBuffer->image ),
-        image4Compression.m_width,
-        /*pad*/ TJ_PAD,
-        image4Compression.m_height,
-        jpegSubsamp,
-        &compressedImageBuffer,
-        &jpegSize,
-        quality,
-        TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
-    );
+    // tjRet = tjCompressFromYUV(
+    //     jpegCompressor,
+    //     reinterpret_cast<const unsigned char*>( image4Compression.m_imageBuffer->image ),
+    //     image4Compression.m_width,
+    //     /*pad*/ TJ_PAD,
+    //     image4Compression.m_height,
+    //     jpegSubsamp,
+    //     &compressedImageBuffer,
+    //     &jpegSize,
+    //     quality,
+    //     TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
+    // );
 
-    LOG4CXX_INFO( loggerImage, "compress image ... done" );
+    // LOG4CXX_INFO( loggerImage, "compress image ... done" );
 
-    if( tjRet == 0 )
+    // if( tjRet == 0 )
+    // {
+    //     ret = std::make_shared<ImageBuffer>(jpegSize);
+    //     std::memcpy( ret->image, compressedImageBuffer, jpegSize );
+    // }
+    // else
+    // {
+    //     ret.reset();
+    //     LOG4CXX_INFO( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
+    // }
+
+    // tjFree( compressedImageBuffer );
+    // tjDestroy( jpegCompressor );
+
+
+
+
+    struct jpeg_compress_struct cinfo;
+    struct jpeg_error_mgr jerr;
+
+
+    cinfo.err = jpeg_std_error(&jerr);
+    jpeg_create_compress(&cinfo);
+
+    unsigned char * bufferForCompressedData = nullptr;
+    int bufferForCompressedDataSize = 0;
+
+    jpeg_mem_dest(&cinfo, bufferForCompressedData, bufferForCompressedDataSize);
+
+    cinfo.image_width =  image4Compression.m_width;
+    cinfo.image_height = image4Compression.m_height;
+    cinfo.input_components = 3;           /* # of color components per pixel */
+    cinfo.in_color_space = JCS_YCbCr;
+
+    jpeg_set_defaults(&cinfo);
+    jpeg_set_quality(&cinfo, quality, TRUE /* limit to baseline-JPEG values */);
+
+    jpeg_start_compress(&cinfo, TRUE);
+
+    const int row_stride = cinfo.image_width * 3; /* JSAMPLEs per row in image_buffer */
+
+    while (cinfo.next_scanline < cinfo.image_height)
     {
-        ret = std::make_shared<ImageBuffer>(jpegSize);
-        std::memcpy( ret->image, compressedImageBuffer, jpegSize );
+        JSAMPROW row_pointer[1];      /* pointer to JSAMPLE row[s] */
+        row_pointer[0] = reinterpret_cast<JSAMPROW>( &image4Compression.m_imageBuffer->image[cinfo.next_scanline * row_stride] );
+        (void) jpeg_write_scanlines(&cinfo, row_pointer, 1);
+    }
+
+    jpeg_finish_compress(&cinfo);
+
+    jpeg_destroy_compress(&cinfo);
+
+    if(    ( bufferForCompressedDataSize != 0 )
+        && ( bufferForCompressedData != nullptr )
+      )
+    {
+        ret = std::make_shared<ImageBuffer>(bufferForCompressedDataSize);
+        std::memcpy( ret->image, bufferForCompressedData, bufferForCompressedDataSize );
+        delete[] bufferForCompressedData;
     }
     else
     {
         ret.reset();
         LOG4CXX_INFO( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
     }
-
-    tjFree( compressedImageBuffer );
-    tjDestroy( jpegCompressor );
 
     return ret;
 }

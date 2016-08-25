@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # configure turbojpeg
     include_directories( "${PROJECT_SOURCE_DIR}/libs/libjpeg-turbo-1.5.0" )
+    include_directories( "${PROJECT_SOURCE_DIR}/libs/libjpeg-turbo-1.5.0/build/" )
     link_directories( "${PROJECT_SOURCE_DIR}/libs/libjpeg-turbo-1.5.0/build/.libs" )
 
     # include other stuff; assume mac ports
