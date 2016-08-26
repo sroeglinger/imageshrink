@@ -66,6 +66,10 @@ int main( int argc, const char* argv[] )
 
     Settings settings;
     
+    // modify environment variables
+    setenv( "TJ_OPTIMIZE", "1", 1 );  // enforce optimizition of the huffman table
+//    setenv( "TJ_PROGRESSIVE", "1", 1);  // enables progressive encoding --> increases file size
+    
     // parse arguments
     {
         int pos = 1;
