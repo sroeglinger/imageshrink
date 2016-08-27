@@ -217,7 +217,7 @@ int main( int argc, const char* argv[] )
                && ( quality > settings.qualityMin ) )
         {
             imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
-            imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( ChrominanceSubsampling::CS_444 );
+            imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( imagejfif1.getChrominanceSubsampling() );
             image2Average = imageshrink::ImageAverage( imagejfif2 );
             image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
 
