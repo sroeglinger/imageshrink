@@ -34,10 +34,12 @@ endforeach()
 
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     # assume clang
-    set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp-use-tls")
+    # set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp-use-tls")
+    set(CMAKE_CXX_FLAGS "-std=c++11 -O3 -ggdb -ffast-math -Wall -Woverloaded-virtual -fopenmp-use-tls")
 elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
     # assume gcc
-    set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp")
+    # set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Wold-style-cast -Woverloaded-virtual -fopenmp")
+    set(CMAKE_CXX_FLAGS "-O4 -ggdb -ffast-math -Wall -Woverloaded-virtual -fopenmp")
 else()
     message(FATAL_ERROR "compiler ID not supported!")
 endif()

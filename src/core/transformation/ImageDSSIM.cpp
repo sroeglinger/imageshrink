@@ -470,28 +470,28 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ..." );
 
     const unsigned char * const plane0Image1Average = &image1AverageBuffer->image[ 0 ];
-    const unsigned char * const plane1Image1Average = &image1AverageBuffer->image[ planaImageNew.planeSize0 ];
-    const unsigned char * const plane2Image1Average = &image1AverageBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    const unsigned char * const plane1Image1Average = &image1AverageBuffer->image[ planaImageNew.planeSize0 ];
+//    const unsigned char * const plane2Image1Average = &image1AverageBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     const unsigned char * const plane0Image2Average = &image2AverageBuffer->image[ 0 ];
-    const unsigned char * const plane1Image2Average = &image2AverageBuffer->image[ planaImageNew.planeSize0 ];
-    const unsigned char * const plane2Image2Average = &image2AverageBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    const unsigned char * const plane1Image2Average = &image2AverageBuffer->image[ planaImageNew.planeSize0 ];
+//    const unsigned char * const plane2Image2Average = &image2AverageBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     const unsigned char * const plane0Image1Variance = &image1VarianceBuffer->image[ 0 ];
-    const unsigned char * const plane1Image1Variance = &image1VarianceBuffer->image[ planaImageNew.planeSize0 ];
-    const unsigned char * const plane2Image1Variance = &image1VarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    const unsigned char * const plane1Image1Variance = &image1VarianceBuffer->image[ planaImageNew.planeSize0 ];
+//    const unsigned char * const plane2Image1Variance = &image1VarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     const unsigned char * const plane0Image2Variance = &image2VarianceBuffer->image[ 0 ];
-    const unsigned char * const plane1Image2Variance = &image2VarianceBuffer->image[ planaImageNew.planeSize0 ];
-    const unsigned char * const plane2Image2Variance = &image2VarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    const unsigned char * const plane1Image2Variance = &image2VarianceBuffer->image[ planaImageNew.planeSize0 ];
+//    const unsigned char * const plane2Image2Variance = &image2VarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     const unsigned char * const plane0Covariance = &covarianceBuffer->image[ 0 ];
-    const unsigned char * const plane1Covariance = &covarianceBuffer->image[ planaImageNew.planeSize0 ];
-    const unsigned char * const plane2Covariance = &covarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    const unsigned char * const plane1Covariance = &covarianceBuffer->image[ planaImageNew.planeSize0 ];
+//    const unsigned char * const plane2Covariance = &covarianceBuffer->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
-    unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
-    unsigned char * const plane2New = &imageBufferNew->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
+//    unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
+//    unsigned char * const plane2New = &imageBufferNew->image[ planaImageNew.planeSize0 + planaImageNew.planeSize1 ];
 
     double dssimSum = 0.0;
     double dssimPeak = -1.0;
