@@ -184,6 +184,7 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     else
     {
         LOG4CXX_ERROR( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
+        return ret;
     }
 
     // allocate buffer for decompressed image
@@ -351,9 +352,12 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     // preparation
     const int width      = image.getWidth();
     const int height     = image.getHeight();
-
+    
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_420, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( width, height, ChrominanceSubsampling::CS_444, TJ_PAD );
+
+    const int planaImageNewHeight1MainPart = ( planaImageOld.height1 / 2 );
+    const int planaImageNewWidth1MainPart  = ( planaImageOld.width1 / 2 );
 
     ImageBufferShrdPtr imageBufferNew = std::make_shared<ImageBuffer>( planaImageNew.bufferSize );
     ImageBufferShrdPtr imageBufferOld = image.getImageBuffer();
@@ -401,11 +405,11 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
             const int bytesPerOldLine = planaImageOld.stride1;
 
             // main part
-            for( int y = 0; y < planaImageNew.height1; ++y )
+            for( int y = 0; y < planaImageNewHeight1MainPart; ++y )
             {
                 const int yOld = y * 2;
 
-                for( int x = 0; x < planaImageNew.width1; ++x )
+                for( int x = 0; x < planaImageNewWidth1MainPart; ++x )
                 {
                     const int xOld = x * 2;
 
@@ -510,11 +514,11 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
             const int bytesPerOldLine = planaImageOld.stride2;
 
             // main part
-            for( int y = 0; y < planaImageNew.height2; ++y )
+            for( int y = 0; y < planaImageNewHeight1MainPart; ++y )
             {
                 const int yOld = y * 2;
 
-                for( int x = 0; x < planaImageNew.width2; ++x )
+                for( int x = 0; x < planaImageNewWidth1MainPart; ++x )
                 {
                     const int xOld = x * 2;
 
