@@ -27,6 +27,7 @@ ImageJfif::ImageJfif()
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
+, m_listOfMarkers()
 {
     reset();
 }
@@ -45,6 +46,7 @@ ImageJfif::ImageJfif( const std::string & path )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
+, m_listOfMarkers()
 {
     reset();
     loadImage( path );
@@ -58,6 +60,7 @@ ImageJfif::ImageJfif( const ImageInterface & image )
 , m_imageBuffer()
 , m_width( 0 )
 , m_height( 0 )
+, m_listOfMarkers()
 {
     m_pixelFormat            = image.getPixelFormat();
     m_colorspace             = image.getColorspace();
@@ -110,6 +113,10 @@ void ImageJfif::loadImage( const std::string & path )
     // decompress jpeg
     ImageJfif image = decompress( compressedImage );
 
+    // parse input file and copy markers
+    m_listOfMarkers = copyMarkers( compressedImage );
+
+    // copy data
     m_pixelFormat            = image.m_pixelFormat;
     m_colorspace             = image.m_colorspace;
     m_bitsPerPixelAndChannel = image.m_bitsPerPixelAndChannel;
@@ -129,6 +136,30 @@ void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceS
 
     // compress image
     ImageBufferShrdPtr compressedImage = compress( *this, quality, cs );
+
+    // write new image
+    LOG4CXX_INFO( loggerImage, "write to file ..." );
+
+    std::ofstream ofs ( path.c_str(), std::ifstream::out | std::ifstream::binary );
+    ofs.write( reinterpret_cast<const char*>( compressedImage->image ), compressedImage->size );
+    ofs.close();
+
+    LOG4CXX_INFO( loggerImage, "write to file ... done" );
+}
+
+void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceSubsampling::VALUE cs, const ListOfMarkerShrdPtr & markers )
+{    
+    if( !m_imageBuffer )
+    {
+        LOG4CXX_ERROR( loggerImage, "m_imageBuffer is a nullptr" );
+        return;
+    }
+
+    // compress image
+    ImageBufferShrdPtr compressedImage = compress( *this, quality, cs );
+
+    // enrich the compressed image with the markers
+    compressedImage = enrichCompressedImageWithMakers( compressedImage, markers );
 
     // write new image
     LOG4CXX_INFO( loggerImage, "write to file ..." );

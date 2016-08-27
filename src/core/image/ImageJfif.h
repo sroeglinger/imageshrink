@@ -4,6 +4,7 @@
 
 // include system headers
 #include <memory> // for smart pointer
+#include <list>
 
 // include application headers
 #include "ImageInterface.h"
@@ -24,6 +25,16 @@ class ImageJfif
 {
     //********** PRELIMINARY **********
     public:
+        struct Marker
+        {
+            std::string marker;
+            std::string content;
+        };
+
+        typedef std::shared_ptr<Marker>  MarkerShrdPtr;
+        typedef std::weak_ptr<Marker>    MarkerWkPtr;
+        typedef std::list<MarkerShrdPtr> ListOfMarkerShrdPtr;
+
 
     //********** (DE/CON)STRUCTORS **********
     public:
@@ -53,6 +64,8 @@ class ImageJfif
         int                           m_width;
         int                           m_height;
 
+        ListOfMarkerShrdPtr           m_listOfMarkers;
+
     //********** METHODS **********
     public:
         // implement ImageInterface
@@ -69,7 +82,9 @@ class ImageJfif
         // own functions
         ImageJfif getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
         void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444 );
+        void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444, const ListOfMarkerShrdPtr & markers = ListOfMarkerShrdPtr() );
         ImageJfif getImageWithChrominanceSubsampling( ChrominanceSubsampling::VALUE cs );
+        ListOfMarkerShrdPtr getMarkers() { return m_listOfMarkers; }
 
     protected:
 
@@ -86,6 +101,9 @@ class ImageJfif
         ImageJfif convertChrominanceSubsampling( const ImageJfif & image, ChrominanceSubsampling::VALUE cs );
         ImageJfif convertChrominanceSubsampling_444to420( const ImageJfif & image );
         ImageJfif convertChrominanceSubsampling_420to444( const ImageJfif & image );
+
+        ListOfMarkerShrdPtr copyMarkers( ImageBufferShrdPtr compressedImage );
+        ImageBufferShrdPtr enrichCompressedImageWithMakers( ImageBufferShrdPtr compressedImage, const ListOfMarkerShrdPtr & markers );
 
 }; //class
 

@@ -243,7 +243,8 @@ int main( int argc, const char* argv[] )
             quality -= 1;
         }
         
-        imagejfif1.storeInFile( settings.outputFile, quality, cs );
+        imageshrink::ImageJfif::ListOfMarkerShrdPtr markers = imagejfif1.getMarkers();
+        imagejfif1.storeInFile( settings.outputFile, quality, cs, markers );
     }
 
 
