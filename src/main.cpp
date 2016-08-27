@@ -178,16 +178,19 @@ int main( int argc, const char* argv[] )
         loggerImage->addAppender          ( defaultAppender );
         loggerTransformation->addAppender ( defaultAppender );
 
-        auto logLevel = log4cxx::Level::getDebug();
-        // auto logLevel = log4cxx::Level::getInfo();
-        // auto logLevel = log4cxx::Level::getWarn();
+//        auto logLevel = log4cxx::Level::getDebug();
+//        auto logLevel = log4cxx::Level::getInfo();
+//        auto logLevel = log4cxx::Level::getWarn();
+        auto logLevel = log4cxx::Level::getError();
+//        auto logLevel = log4cxx::Level::getFatal();
+//        auto logLevel = log4cxx::Level::getOff();
         
         loggerMain->setLevel           ( logLevel );  // Log level set to DEBUG
         loggerImage->setLevel          ( logLevel );   // Log level set to INFO
         loggerTransformation->setLevel ( logLevel );   // Log level set to INFO
 
-        std::cout << "Could not open Log4cxx configuration XML file: " << log4cxxConfigFile << std::endl;
-        perror("Problem opening log4cxx config file");
+//        std::cout << "Could not open Log4cxx configuration XML file: " << log4cxxConfigFile << std::endl;
+//        perror("Problem opening log4cxx config file");
     }
 
     // reduce image size
