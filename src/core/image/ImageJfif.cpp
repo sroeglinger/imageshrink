@@ -147,7 +147,7 @@ void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceS
     LOG4CXX_INFO( loggerImage, "write to file ... done" );
 }
 
-void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceSubsampling::VALUE cs, const ListOfMarkerShrdPtr & markers )
+void ImageJfif::storeInFile( const std::string & path, const ListOfMarkerShrdPtr & markers, int quality, ChrominanceSubsampling::VALUE cs )
 {    
     if( !m_imageBuffer )
     {

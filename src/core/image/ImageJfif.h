@@ -82,7 +82,7 @@ class ImageJfif
         // own functions
         ImageJfif getCompressedDecompressedImage( int quality, ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_444 );
         void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444 );
-        void storeInFile( const std::string & path, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444, const ListOfMarkerShrdPtr & markers = ListOfMarkerShrdPtr() );
+        void storeInFile( const std::string & path, const ListOfMarkerShrdPtr & markers, int quality = 85, ChrominanceSubsampling::VALUE value = ChrominanceSubsampling::CS_444 );
         ImageJfif getImageWithChrominanceSubsampling( ChrominanceSubsampling::VALUE cs );
         ListOfMarkerShrdPtr getMarkers() { return m_listOfMarkers; }
 

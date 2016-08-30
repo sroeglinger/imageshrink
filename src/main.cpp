@@ -32,6 +32,7 @@ struct Settings
     , qualityMax( 85 )
     , dssimAvgMax( 70.0e-6 )
     , dssimPeakMax( 8900.0e-6 )
+    , copyMarkers( true )
     , inputFile()
     , outputFile()
     {}
@@ -40,6 +41,7 @@ struct Settings
     int    qualityMax;
     double dssimAvgMax;
     double dssimPeakMax;
+    bool   copyMarkers;
 
     std::string inputFile;
     std::string outputFile;
@@ -51,10 +53,11 @@ void printUsage()
     std::cout << "imageshrink [settings] inputFile outputFile" << std::endl;
     std::cout << std::endl;
     std::cout << "settings:" << std::endl;
-    std::cout << "    --min value           minimum jpeg quality" << std::endl;
-    std::cout << "    --max value           maximum jpeg quality" << std::endl;
-    std::cout << "    --dssimAvgMax value   maximum for the average DSSIM" << std::endl;
-    std::cout << "    --dssimPeakMax value  maximum for the peak DSSIM" << std::endl;
+    std::cout << "    --min value           minimum jpeg quality (0 <= value <= 100)" << std::endl;
+    std::cout << "    --max value           maximum jpeg quality (0 <= value <= 100)" << std::endl;
+    std::cout << "    --dssimAvgMax value   maximum for the average DSSIM (0.0 <= value <= 1.0)" << std::endl;
+    std::cout << "    --dssimPeakMax value  maximum for the peak DSSIM (0.0 <= value <= 1.0)" << std::endl;
+    std::cout << "    --copyMarkers value   maximum for the peak DSSIM (value = none|all)" << std::endl;
 }
 
 
@@ -73,6 +76,7 @@ int main( int argc, const char* argv[] )
     // parse arguments
     {
         int pos = 1;
+        bool error = false;
         
         if( argc < 2 )
         {
@@ -80,7 +84,9 @@ int main( int argc, const char* argv[] )
             return EXIT_FAILURE;
         }
         
-        while( pos < argc )
+        while(    ( pos < argc )
+               && ( !error )
+             )
         {
             const int nofRemainigArgs = argc - pos;
             const std::string arg( argv[pos] );
@@ -112,7 +118,18 @@ int main( int argc, const char* argv[] )
                     const std::string value( argv[ pos ] );
                     pos = pos + 1;
                     
-                    settings.qualityMin = std::stoi( value );
+                    try {
+                        settings.qualityMin = std::stoi( value );
+                    } catch (...) {
+                        error = true;
+                    }
+                    
+                    if(    ( settings.qualityMin < 0 )
+                        || ( settings.qualityMin > 100 )
+                      )
+                    {
+                        error = true;
+                    }
                     
                     somethingDone = true;
                 }
@@ -121,7 +138,19 @@ int main( int argc, const char* argv[] )
                     const std::string value( argv[ pos ] );
                     pos = pos + 1;
                     
-                    settings.qualityMax = std::stoi( value );
+                    try {
+                        settings.qualityMax = std::stoi( value );
+                    } catch (...) {
+                        error = true;
+                    }
+                    
+                    if(    ( settings.qualityMax < 0 )
+                        || ( settings.qualityMax > 100 )
+                      )
+                    {
+                        error = true;
+                    }
+
                     
                     somethingDone = true;
                 }
@@ -130,7 +159,18 @@ int main( int argc, const char* argv[] )
                     const std::string value( argv[ pos ] );
                     pos = pos + 1;
                     
-                    settings.dssimAvgMax = std::stod( value );
+                    try {
+                        settings.dssimAvgMax = std::stod( value );
+                    } catch (...) {
+                        error = true;
+                    }
+                    
+                    if(    ( settings.dssimAvgMax < 0.0 )
+                        || ( settings.dssimAvgMax > 1.0 )
+                      )
+                    {
+                        error = true;
+                    }
                     
                     somethingDone = true;
                 }
@@ -139,7 +179,40 @@ int main( int argc, const char* argv[] )
                     const std::string value( argv[ pos ] );
                     pos = pos + 1;
                     
-                    settings.dssimPeakMax = std::stod( value );
+                    try {
+                        settings.dssimPeakMax = std::stod( value );
+                    } catch (...) {
+                        error = true;
+                    }
+                    
+                    if(    ( settings.dssimPeakMax < 0.0 )
+                        || ( settings.dssimPeakMax > 1.0 )
+                      )
+                    {
+                        error = true;
+                    }
+                    
+                    somethingDone = true;
+                }
+                
+                
+                else if( arg == "--copyMarkers" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    if( value == "all")
+                    {
+                        settings.copyMarkers = true;
+                    }
+                    else if( value == "none")
+                    {
+                        settings.copyMarkers = false;
+                    }
+                    else
+                    {
+                        error = true;
+                    }
                     
                     somethingDone = true;
                 }
@@ -151,9 +224,14 @@ int main( int argc, const char* argv[] )
                 return EXIT_FAILURE;
             }
         }
+        
+        if( error )
+        {
+            std::cerr << "error during argument parsing." << std::endl;
+            printUsage();
+            return EXIT_FAILURE;
+        }
     }
-
-
 
 
 
@@ -178,10 +256,10 @@ int main( int argc, const char* argv[] )
         loggerImage->addAppender          ( defaultAppender );
         loggerTransformation->addAppender ( defaultAppender );
 
-//        auto logLevel = log4cxx::Level::getDebug();
+        auto logLevel = log4cxx::Level::getDebug();
 //        auto logLevel = log4cxx::Level::getInfo();
 //        auto logLevel = log4cxx::Level::getWarn();
-        auto logLevel = log4cxx::Level::getError();
+//        auto logLevel = log4cxx::Level::getError();
 //        auto logLevel = log4cxx::Level::getFatal();
 //        auto logLevel = log4cxx::Level::getOff();
         
@@ -243,8 +321,15 @@ int main( int argc, const char* argv[] )
             quality -= 1;
         }
         
-        imageshrink::ImageJfif::ListOfMarkerShrdPtr markers = imagejfif1.getMarkers();
-        imagejfif1.storeInFile( settings.outputFile, quality, cs, markers );
+        if( settings.copyMarkers )
+        {
+            imageshrink::ImageJfif::ListOfMarkerShrdPtr markers = imagejfif1.getMarkers();
+            imagejfif1.storeInFile( settings.outputFile, markers, quality, cs );
+        }
+        else
+        {
+            imagejfif1.storeInFile( settings.outputFile, quality, cs );
+        }
     }
 
 
