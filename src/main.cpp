@@ -69,6 +69,8 @@ int main( int argc, const char* argv[] )
 
     Settings settings;
     
+    bool error = false;
+    
     // modify environment variables
     setenv( "TJ_OPTIMIZE", "1", 1 );  // enforce optimizition of the huffman table
 //    setenv( "TJ_PROGRESSIVE", "1", 1);  // enables progressive encoding --> increases file size
@@ -76,7 +78,6 @@ int main( int argc, const char* argv[] )
     // parse arguments
     {
         int pos = 1;
-        bool error = false;
         
         if( argc < 2 )
         {
@@ -272,8 +273,16 @@ int main( int argc, const char* argv[] )
     }
 
     // reduce image size
+    do
     {
         imageshrink::ImageJfif imagejfif1( settings.inputFile );
+        
+        if( !imagejfif1.isImageValid() )
+        {
+            error = true;
+            std::cerr << "image file count not be loaded" << std::endl;
+            break;
+        }
         
         imageshrink::ImageAverage    image1Average;
         imageshrink::ImageVariance   image1Variance;
@@ -330,14 +339,21 @@ int main( int argc, const char* argv[] )
         {
             imagejfif1.storeInFile( settings.outputFile, quality, cs );
         }
-    }
+    } while(0);
 
 
-    // cleanup when application closes
+    // cleanup when application closes --> does not work for any reason
     // if( defaultAppender ) { delete defaultAppender; defaultAppender = nullptr; }
     // if( defaultLayout )   { delete defaultLayout; defaultLayout = nullptr; }
     
 
     // end of application
-    return EXIT_SUCCESS;
+    if( error )
+    {
+        return EXIT_FAILURE;
+    }
+    else
+    {
+        return EXIT_SUCCESS;
+    }
 }
