@@ -931,6 +931,9 @@ ImageJfif ImageJfif::getCompressedDecompressedImage( int quality, ChrominanceSub
 {
     ImageBufferShrdPtr compressedImage   = compress( *this, quality, cs );
     ImageJfif          decompressedImage = decompress( compressedImage );
+    
+    LOG4CXX_INFO( loggerImage, "The size of the compressed image is " << compressedImage->size << " Bytes (quality " << quality << ")." );
+    
     return decompressedImage;
 }
 
