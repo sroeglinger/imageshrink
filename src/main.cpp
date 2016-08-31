@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <string>
+#include <unordered_map>
 
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -33,6 +34,7 @@ struct Settings
     , dssimAvgMax( 70.0e-6 )
     , dssimPeakMax( 8900.0e-6 )
     , copyMarkers( true )
+    , initQualityStep( 10 )
     , inputFile()
     , outputFile()
     {}
@@ -42,9 +44,21 @@ struct Settings
     double dssimAvgMax;
     double dssimPeakMax;
     bool   copyMarkers;
+    int    initQualityStep;
 
     std::string inputFile;
     std::string outputFile;
+};
+
+struct ImageComparisonResult
+{
+    ImageComparisonResult()
+    : dssimAvg( 0.0 )
+    , dssimPeak( 0.0 )
+    {}
+    
+    double dssimAvg;
+    double dssimPeak;
 };
 
 
@@ -53,11 +67,12 @@ void printUsage()
     std::cout << "imageshrink [settings] inputFile outputFile" << std::endl;
     std::cout << std::endl;
     std::cout << "settings:" << std::endl;
-    std::cout << "    --min value           minimum jpeg quality (0 <= value <= 100)" << std::endl;
-    std::cout << "    --max value           maximum jpeg quality (0 <= value <= 100)" << std::endl;
-    std::cout << "    --dssimAvgMax value   maximum for the average DSSIM (0.0 <= value <= 1.0)" << std::endl;
-    std::cout << "    --dssimPeakMax value  maximum for the peak DSSIM (0.0 <= value <= 1.0)" << std::endl;
-    std::cout << "    --copyMarkers value   maximum for the peak DSSIM (value = none|all)" << std::endl;
+    std::cout << "    --min value               minimum jpeg quality (0 <= value <= 100)" << std::endl;
+    std::cout << "    --max value               maximum jpeg quality (0 <= value <= 100)" << std::endl;
+    std::cout << "    --dssimAvgMax value       maximum for the average DSSIM (0.0 <= value <= 1.0)" << std::endl;
+    std::cout << "    --dssimPeakMax value      maximum for the peak DSSIM (0.0 <= value <= 1.0)" << std::endl;
+    std::cout << "    --copyMarkers value       maximum for the peak DSSIM (value = none|all)" << std::endl;
+    std::cout << "    --initQualityStep value   init value for qulaity steps (1 <= value <= 10)" << std::endl;
 }
 
 
@@ -195,8 +210,6 @@ int main( int argc, const char* argv[] )
                     
                     somethingDone = true;
                 }
-                
-                
                 else if( arg == "--copyMarkers" )
                 {
                     const std::string value( argv[ pos ] );
@@ -214,6 +227,27 @@ int main( int argc, const char* argv[] )
                     {
                         error = true;
                     }
+                    
+                    somethingDone = true;
+                }
+                else if( arg == "--initQualityStep" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    try {
+                        settings.initQualityStep = std::stoi( value );
+                    } catch (...) {
+                        error = true;
+                    }
+                    
+                    if(    ( settings.initQualityStep < 1 )
+                        || ( settings.initQualityStep > 10 )
+                      )
+                    {
+                        error = true;
+                    }
+                    
                     
                     somethingDone = true;
                 }
@@ -298,37 +332,80 @@ int main( int argc, const char* argv[] )
         collection1.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image1Average ) );
         collection1.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image1Variance ) );
 
-        double dssim = 0.0;
-        double dssimPeak = 0.0;
         int quality = settings.qualityMax;
+        int qualityLast = quality;
+        int qualityStep = settings.initQualityStep;
         ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
-        while(    ( dssim < settings.dssimAvgMax )
-               && ( dssimPeak < settings.dssimPeakMax )
-               && ( quality > settings.qualityMin ) )
+        std::unordered_map<int /*quality*/, ImageComparisonResult> icrMap;
+        
+        while( qualityStep != 0 )
         {
-            imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
-            imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( imagejfif1.getChrominanceSubsampling() );
-            image2Average = imageshrink::ImageAverage( imagejfif2 );
-            image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
-
-            imageshrink::ImageCollection collection2;
-            collection2.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif2 ) );
-            collection2.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image2Average ) );
-            collection2.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image2Variance ) );
-
-            imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
-
-            dssim = imageDSSIM.getDssim();
-            dssimPeak = imageDSSIM.getDssimPeak();
-            LOG4CXX_WARN( loggerMain, 
-                "DSSIM = " 
-                << dssim 
-                << "; DSSIM Peak = " 
-                << dssimPeak 
-                << "; quality = " << quality );
-
-            quality -= 1;
+            double dssim = 0.0;
+            double dssimPeak = 0.0;
+            
+            while(    ( dssim < settings.dssimAvgMax )
+                   && ( dssimPeak < settings.dssimPeakMax )
+                   && ( quality > settings.qualityMin ) )
+            {
+                const auto icrMapEntry = icrMap.find( quality );
+                
+                if( icrMapEntry == icrMap.end() )
+                {
+                    imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
+                    imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( imagejfif1.getChrominanceSubsampling() );
+                    image2Average = imageshrink::ImageAverage( imagejfif2 );
+                    image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
+                    
+                    imageshrink::ImageCollection collection2;
+                    collection2.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif2 ) );
+                    collection2.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image2Average ) );
+                    collection2.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image2Variance ) );
+                    
+                    imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
+                    
+                    dssim = imageDSSIM.getDssim();
+                    dssimPeak = imageDSSIM.getDssimPeak();
+                    
+                    LOG4CXX_WARN( loggerMain,
+                                 "DSSIM = "
+                                 << dssim
+                                 << "; DSSIM Peak = "
+                                 << dssimPeak
+                                 << "; quality = " << quality
+                    );
+                    
+                    ImageComparisonResult icr;
+                    icr.dssimAvg = dssim;
+                    icr.dssimPeak = dssimPeak;
+                    icrMap[ quality ] = icr;
+                }
+                else
+                {
+                    dssim = icrMapEntry->second.dssimAvg;
+                    dssimPeak = icrMapEntry->second.dssimPeak;
+                    
+                    LOG4CXX_WARN( loggerMain,
+                                 "DSSIM = "
+                                 << dssim
+                                 << "; DSSIM Peak = "
+                                 << dssimPeak
+                                 << "; quality = " << quality
+                                 << " (restored result)"
+                    );
+                }
+                
+                qualityLast = quality;
+                quality -= qualityStep;
+            }
+            
+            quality     += ( 2 * qualityStep );
+            qualityLast  = quality;
+            qualityStep /= 2;   // qualityStep == 0: end of loop
+            
+            LOG4CXX_INFO( loggerMain, "qualityStep = " << qualityStep );
         }
+        
+        LOG4CXX_INFO( loggerMain, "final quality setting = " << quality );
         
         if( settings.copyMarkers )
         {
