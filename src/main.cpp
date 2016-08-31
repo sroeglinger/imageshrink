@@ -318,23 +318,19 @@ int main( int argc, const char* argv[] )
             break;
         }
         
-        imageshrink::ImageAverage    image1Average;
-        imageshrink::ImageVariance   image1Variance;
-        imageshrink::ImageJfif       imagejfif2;
-        imageshrink::ImageAverage    image2Average;
-        imageshrink::ImageVariance   image2Variance;
-
-        image1Average = imageshrink::ImageAverage( imagejfif1 );
-        image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
-
         imageshrink::ImageCollection collection1;
-        collection1.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif1 ) );
-        collection1.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image1Average ) );
-        collection1.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image1Variance ) );
+        {
+            imageshrink::ImageAverage image1Average   = imageshrink::ImageAverage( imagejfif1 );
+            imageshrink::ImageVariance image1Variance = imageshrink::ImageVariance( imagejfif1, image1Average );
+
+            collection1.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif1 ) );
+            collection1.addImage( "average",  std::make_shared<imageshrink::ImageDummy>( image1Average ) );
+            collection1.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image1Variance ) );
+        }
 
         int quality = settings.qualityMax;
         int qualityStep = settings.initQualityStep;
-        ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
+        const ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
         std::unordered_map<int /*quality*/, ImageComparisonResult> icrMap;
         
         while( qualityStep != 0 )
@@ -350,10 +346,10 @@ int main( int argc, const char* argv[] )
                 
                 if( icrMapEntry == icrMap.end() )
                 {
-                    imagejfif2 = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
-                    imagejfif2 = imagejfif2.getImageWithChrominanceSubsampling( imagejfif1.getChrominanceSubsampling() );
-                    image2Average = imageshrink::ImageAverage( imagejfif2 );
-                    image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
+                    imageshrink::ImageJfif imagejfif2         = imagejfif1.getCompressedDecompressedImage( /*quality*/ quality, cs );
+                    imagejfif2                                = imagejfif2.getImageWithChrominanceSubsampling( imagejfif1.getChrominanceSubsampling() );
+                    imageshrink::ImageAverage image2Average   = imageshrink::ImageAverage( imagejfif2 );
+                    imageshrink::ImageVariance image2Variance = imageshrink::ImageVariance( imagejfif2, image2Average );
                     
                     imageshrink::ImageCollection collection2;
                     collection2.addImage( "original", std::make_shared<imageshrink::ImageDummy>( imagejfif2 ) );
