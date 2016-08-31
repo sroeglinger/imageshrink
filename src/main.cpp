@@ -333,7 +333,6 @@ int main( int argc, const char* argv[] )
         collection1.addImage( "variance", std::make_shared<imageshrink::ImageDummy>( image1Variance ) );
 
         int quality = settings.qualityMax;
-        int qualityLast = quality;
         int qualityStep = settings.initQualityStep;
         ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
         std::unordered_map<int /*quality*/, ImageComparisonResult> icrMap;
@@ -390,12 +389,10 @@ int main( int argc, const char* argv[] )
                     );
                 }
                 
-                qualityLast = quality;
                 quality -= qualityStep;
             }
             
             quality     += ( 2 * qualityStep );
-            qualityLast  = quality;
             qualityStep /= 2;   // qualityStep == 0: end of loop
             
             LOG4CXX_INFO( loggerMain, "qualityStep = " << qualityStep );
