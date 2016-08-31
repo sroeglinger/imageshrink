@@ -340,12 +340,12 @@ int main( int argc, const char* argv[] )
         
         while( qualityStep != 0 )
         {
-            double dssim = 0.0;
-            double dssimPeak = 0.0;
+            ImageComparisonResult icr;
             
-            while(    ( dssim < settings.dssimAvgMax )
-                   && ( dssimPeak < settings.dssimPeakMax )
-                   && ( quality > settings.qualityMin ) )
+            while(    ( icr.dssimAvg < settings.dssimAvgMax )
+                   && ( icr.dssimPeak < settings.dssimPeakMax )
+                   && ( quality > settings.qualityMin )
+                 )
             {
                 const auto icrMapEntry = icrMap.find( quality );
                 
@@ -363,32 +363,28 @@ int main( int argc, const char* argv[] )
                     
                     imageshrink::ImageDSSIM imageDSSIM( collection1, collection2 );
                     
-                    dssim = imageDSSIM.getDssim();
-                    dssimPeak = imageDSSIM.getDssimPeak();
+                    icr.dssimAvg  = imageDSSIM.getDssim();
+                    icr.dssimPeak = imageDSSIM.getDssimPeak();
                     
                     LOG4CXX_WARN( loggerMain,
                                  "DSSIM = "
-                                 << dssim
+                                 << icr.dssimAvg
                                  << "; DSSIM Peak = "
-                                 << dssimPeak
+                                 << icr.dssimPeak
                                  << "; quality = " << quality
                     );
                     
-                    ImageComparisonResult icr;
-                    icr.dssimAvg = dssim;
-                    icr.dssimPeak = dssimPeak;
                     icrMap[ quality ] = icr;
                 }
                 else
                 {
-                    dssim = icrMapEntry->second.dssimAvg;
-                    dssimPeak = icrMapEntry->second.dssimPeak;
+                    icr = icrMapEntry->second;
                     
                     LOG4CXX_WARN( loggerMain,
                                  "DSSIM = "
-                                 << dssim
+                                 << icr.dssimAvg
                                  << "; DSSIM Peak = "
-                                 << dssimPeak
+                                 << icr.dssimPeak
                                  << "; quality = " << quality
                                  << " (restored result)"
                     );
