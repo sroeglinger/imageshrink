@@ -1,6 +1,13 @@
 project(imageshrink)
 cmake_minimum_required(VERSION 2.8)
 
+#configure options
+option(USE_LOG4CXX "enable logging with log4cxx" OFF)
+if(USE_LOG4CXX)
+    add_definitions("-DUSE_LOG4CXX")
+endif()
+
+
 #configure libraries
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # configure turbojpeg
@@ -53,5 +60,8 @@ message(STATUS "h-files: " "${src_h}")
 message(STATUS "CMAKE_CXX_FLAGS: ${CMAKE_CXX_FLAGS}")
 
 add_executable( imageshrink ${src_h} ${src_cpp} )
-target_link_libraries( imageshrink jpeg turbojpeg log4cxx )
+target_link_libraries( imageshrink jpeg turbojpeg )
 
+if(USE_LOG4CXX)
+    target_link_libraries( imageshrink log4cxx )
+endif()

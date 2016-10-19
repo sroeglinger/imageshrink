@@ -9,12 +9,16 @@
 #include "PlanarImageCalc.h"
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
+#endif //USE_LOG4CXX
 
 ImageCovariance::ImageCovariance()
 : m_pixelFormat( PixelFormat::UNKNOWN )
@@ -57,7 +61,9 @@ ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInte
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "unknown pixelformat " << PixelFormat::toString( image1.getPixelFormat() ) );
+#endif //USE_LOG4CXX
             break;
     }
 
@@ -97,7 +103,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         || ( !imageAvgBuffer2 )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -110,7 +118,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         || ( averageImage1.getHeight() != image1.getHeight() / averaging )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size missmatch between images" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -122,7 +132,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         && ( averageImage2.getColorspace() != Colorspace::RGB )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -134,7 +146,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         && ( averageImage2.getPixelFormat() != PixelFormat::RGB )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -148,7 +162,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         || ( bufferSize != imageBuffer2->size )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -160,6 +176,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
                                         << bufferSize 
                                         << " Bytes"
@@ -167,10 +184,13 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
                                         << newBufferSize
                                         << " Bytes"
     );
+#endif //USE_LOG4CXX
 
     ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( newBufferSize );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
+#endif //USE_LOG4CXX
 
     int bytesPerLine = image1.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
@@ -222,7 +242,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ... done" );
+#endif //USE_LOG4CXX
 
     // collect data
     ret.m_pixelFormat            = image1.getPixelFormat();
@@ -254,7 +276,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         || ( !imageAvgBuffer2 )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -267,7 +291,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         || ( averageImage1.getHeight() != image1.getHeight() / averaging )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size missmatch between images" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -279,7 +305,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         && ( averageImage2.getColorspace() != Colorspace::YCbCr )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not YCbCr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -291,7 +319,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         && ( averageImage2.getPixelFormat() != PixelFormat::YCbCr_Planar )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not YCbCr_Planar" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -318,7 +348,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "not supported chrominance subsampling " << ChrominanceSubsampling::toString( cs ) );
+#endif //USE_LOG4CXX
             ret.reset();
             return ret;
             break;
@@ -331,7 +363,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         && ( averageImage2.getChrominanceSubsampling() != cs )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "chrominance subsampling mismatch" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -359,7 +393,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         || ( !averageImage2BufferOld )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -376,7 +412,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
     //     return ret;
     // }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine convariance ..." );
+#endif //USE_LOG4CXX
 
     unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
     unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
@@ -525,7 +563,9 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine convariance ... done " );
+#endif //USE_LOG4CXX
 
     // collect information
     ret.m_pixelFormat = image1.getPixelFormat();

@@ -7,12 +7,12 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
 #include <log4cxx/xml/domconfigurator.h>
 #include <log4cxx/simplelayout.h>
 #include <log4cxx/consoleappender.h>
-
+#endif //USE_LOG4CXX
 
 #include "ImageDummy.h"
 #include "ImageJfif.h"
@@ -22,9 +22,11 @@
 #include "ImageDSSIM.h"
 
 // Define static logger variable
+#ifdef USE_LOG4CXX
 log4cxx::LoggerPtr loggerMain           ( log4cxx::Logger::getLogger( "main" ) );
 log4cxx::LoggerPtr loggerImage          ( log4cxx::Logger::getLogger( "image" ) );
 log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
+#endif //USE_LOG4CXX
 
 struct Settings
 {
@@ -79,8 +81,10 @@ void printUsage()
 int main( int argc, const char* argv[] )
 {
     // Initialize variables
+#ifdef USE_LOG4CXX
     log4cxx::AppenderPtr defaultAppender = nullptr;
     log4cxx::LayoutPtr   defaultLayout   = nullptr;
+#endif //USE_LOG4CXX
 
     Settings settings;
     
@@ -271,6 +275,7 @@ int main( int argc, const char* argv[] )
 
 
     // configure logging
+#ifdef USE_LOG4CXX
     struct stat fileStat;
     std::string log4cxxConfigFile = "Log4cxxConfig.xml";
     errno = 0;  // Set by stat() upon an error
@@ -291,10 +296,10 @@ int main( int argc, const char* argv[] )
         loggerImage->addAppender          ( defaultAppender );
         loggerTransformation->addAppender ( defaultAppender );
 
-        auto logLevel = log4cxx::Level::getDebug();
+//        auto logLevel = log4cxx::Level::getDebug();
 //        auto logLevel = log4cxx::Level::getInfo();
 //        auto logLevel = log4cxx::Level::getWarn();
-//        auto logLevel = log4cxx::Level::getError();
+        auto logLevel = log4cxx::Level::getError();
 //        auto logLevel = log4cxx::Level::getFatal();
 //        auto logLevel = log4cxx::Level::getOff();
         
@@ -305,6 +310,7 @@ int main( int argc, const char* argv[] )
 //        std::cout << "Could not open Log4cxx configuration XML file: " << log4cxxConfigFile << std::endl;
 //        perror("Problem opening log4cxx config file");
     }
+#endif //USE_LOG4CXX
 
     // reduce image size
     do
@@ -360,7 +366,8 @@ int main( int argc, const char* argv[] )
                     
                     icr.dssimAvg  = imageDSSIM.getDssim();
                     icr.dssimPeak = imageDSSIM.getDssimPeak();
-                    
+
+#ifdef USE_LOG4CXX
                     LOG4CXX_WARN( loggerMain,
                                  "DSSIM = "
                                  << icr.dssimAvg
@@ -368,6 +375,7 @@ int main( int argc, const char* argv[] )
                                  << icr.dssimPeak
                                  << "; quality = " << quality
                     );
+#endif //USE_LOG4CXX
                     
                     icrMap[ quality ] = icr;
                 }
@@ -375,6 +383,7 @@ int main( int argc, const char* argv[] )
                 {
                     icr = icrMapEntry->second;
                     
+#ifdef USE_LOG4CXX
                     LOG4CXX_WARN( loggerMain,
                                  "DSSIM = "
                                  << icr.dssimAvg
@@ -383,6 +392,7 @@ int main( int argc, const char* argv[] )
                                  << "; quality = " << quality
                                  << " (restored result)"
                     );
+#endif //USE_LOG4CXX
                 }
                 
                 quality -= qualityStep;
@@ -390,11 +400,15 @@ int main( int argc, const char* argv[] )
             
             quality     += ( 2 * qualityStep );
             qualityStep /= 2;   // qualityStep == 0: end of loop
-            
+
+#ifdef USE_LOG4CXX
             LOG4CXX_INFO( loggerMain, "qualityStep = " << qualityStep );
+#endif //USE_LOG4CXX
         }
         
+#ifdef USE_LOG4CXX
         LOG4CXX_INFO( loggerMain, "final quality setting = " << quality );
+#endif //USE_LOG4CXX
         
         if( settings.copyMarkers )
         {

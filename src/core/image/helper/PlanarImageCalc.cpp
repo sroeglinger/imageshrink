@@ -7,13 +7,18 @@
 
 // include 3rd party headers
 #include <turbojpeg.h>
+
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
-
+#endif //USE_LOG4CXX
+    
 PlanarImageDesc calcPlanaerImageDescForYUV( int width, int height, ChrominanceSubsampling::VALUE cs, int padding )
 {
     PlanarImageDesc ret;
@@ -55,8 +60,10 @@ int convert2Tj( ChrominanceSubsampling::VALUE cs )
         case ChrominanceSubsampling::Gray:   return TJSAMP_GRAY;
         case ChrominanceSubsampling::CS_440: return TJSAMP_440;
         case ChrominanceSubsampling::CS_411: return TJSAMP_411;
-        default: 
+        default:
+#ifdef USE_LOG4CXX
             LOG4CXX_INFO( loggerImage, "There is no TurboJpeg Value for " << ChrominanceSubsampling::toString( cs ) << "." );
+#endif //USE_LOG4CXX
             return TJSAMP_444;
     }    
 }

@@ -10,12 +10,16 @@
 #include "ImageCovariance.h"
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
+#endif //USE_LOG4CXX
 
 ImageDSSIM::ImageDSSIM()
 : m_pixelFormat( PixelFormat::UNKNOWN )
@@ -62,7 +66,9 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
                 break;
 
             default:
+#ifdef USE_LOG4CXX
                 LOG4CXX_ERROR( loggerTransformation, "unknown pixelformat " << PixelFormat::toString( image1Original->getPixelFormat() ) );
+#endif //USE_LOG4CXX
                 break;
         }
 
@@ -79,7 +85,9 @@ ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCol
     }
     else
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "There is no image called 'original' in imageCollection1" );
+#endif //USE_LOG4CXX
     }
 }
 
@@ -120,7 +128,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( !image2Variance )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one image is missing" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -134,7 +144,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( image2Variance->getColorspace() != Colorspace::RGB )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one colorspace is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -148,7 +160,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( image2Variance->getPixelFormat() != PixelFormat::RGB )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one pixel-format is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -164,7 +178,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( image1Variance->getHeight() != image2Variance->getHeight() )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size mismatch between images (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -187,7 +203,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( !image2VarianceBuffer )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -198,7 +216,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( image1VarianceBuffer->size != image2VarianceBuffer->size )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size mismatch between images (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -209,7 +229,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
 
     if( !covarianceBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -219,7 +241,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         || ( covariance.getHeight() != image1Average->getHeight() )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size mismatch between images (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -241,7 +265,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
 
     ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( bufferSize );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ..." );
+#endif //USE_LOG4CXX
 
     const int bytesPerLine = width * bytesPerPixel;
     double dssimSum = 0.0;
@@ -283,7 +309,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
         dssimSum += ( dssimLineSum / static_cast<double>(width) );
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ... done" );
+#endif //USE_LOG4CXX
 
     // collect data
     ret.m_pixelFormat            = image1Average->getPixelFormat();
@@ -323,7 +351,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( !image2Variance )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one image is missing" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -337,7 +367,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( image2Variance->getColorspace() != Colorspace::YCbCr )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one colorspace is not YCbCr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -351,7 +383,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( image2Variance->getPixelFormat() != PixelFormat::YCbCr_Planar )
        )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one pixel-format is not YCbCr_Planar" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -367,7 +401,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( image1Variance->getHeight() != image2Variance->getHeight() )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size mismatch between images (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -390,7 +426,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( !image2VarianceBuffer )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -401,6 +439,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         || ( image1VarianceBuffer->size != image2VarianceBuffer->size )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size mismatch between images (" << __FILE__ << ", " << __LINE__ << ")" );
 
         LOG4CXX_ERROR( loggerTransformation, "image1OriginalBuffer->size: " << image1OriginalBuffer->size );
@@ -410,6 +449,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         LOG4CXX_ERROR( loggerTransformation, "image2OriginalBuffer->size: " << image2OriginalBuffer->size );
         LOG4CXX_ERROR( loggerTransformation, "image2AverageBuffer->size:  " << image2AverageBuffer->size );
         LOG4CXX_ERROR( loggerTransformation, "image2VarianceBuffer->size: " << image2VarianceBuffer->size );
+#endif //USE_LOG4CXX
 
         ret.reset();
         return ret;
@@ -421,7 +461,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
 
     if( !covarianceBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "at least one imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -447,7 +489,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         // || ( !imageBufferOld )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -461,13 +505,17 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
         && ( image2Variance->getChrominanceSubsampling() != cs )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "chrominance subsampling mismatch" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
 
     // preparation
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ..." );
+#endif //USE_LOG4CXX
 
     const unsigned char * const plane0Image1Average = &image1AverageBuffer->image[ 0 ];
 //    const unsigned char * const plane1Image1Average = &image1AverageBuffer->image[ planaImageNew.planeSize0 ];
@@ -540,7 +588,9 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
 
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "calculate SSIM ... done" );
+#endif //USE_LOG4CXX
 
     // collect data
     ret.m_pixelFormat            = image1Average->getPixelFormat();
@@ -562,7 +612,9 @@ double ImageDSSIM::getDssim()
 {
     if( !m_dssimValid )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_FATAL( loggerTransformation, "dssim value is NOT valid!!!" );
+#endif //USE_LOG4CXX
     }
 
     return m_dssim;
@@ -572,7 +624,9 @@ double ImageDSSIM::getDssimPeak()
 {
     if( !m_dssimValid )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_FATAL( loggerTransformation, "dssimPeak value is NOT valid!!!" );
+#endif //USE_LOG4CXX
     }
     
     return m_dssimPeak;

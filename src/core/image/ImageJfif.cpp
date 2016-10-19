@@ -12,12 +12,17 @@
 
 // include 3rd party headers
 #include <turbojpeg.h>
+
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
+#endif //USE_LOG4CXX
 
 ImageJfif::ImageJfif()
 : m_pixelFormat( PixelFormat::UNKNOWN )
@@ -102,13 +107,17 @@ void ImageJfif::loadImage( const std::string & path )
     const long unsigned int jpegSize = length;
 
     // read file
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "read JFIF file with " << length << " Bytes ..." );
+#endif //USE_LOG4CXX
 
     ImageBufferShrdPtr compressedImage = std::make_shared<ImageBuffer>(jpegSize);
     ifs.read( reinterpret_cast<char*>( compressedImage->image ), length );
     ifs.close();
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "read JFIF file with " << length << " Bytes ... done" );
+#endif //USE_LOG4CXX
     
     // decompress jpeg
     ImageJfif image = decompress( compressedImage );
@@ -130,7 +139,9 @@ void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceS
 {    
     if( !m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "m_imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return;
     }
 
@@ -138,20 +149,26 @@ void ImageJfif::storeInFile( const std::string & path, int quality, ChrominanceS
     ImageBufferShrdPtr compressedImage = compress( *this, quality, cs );
 
     // write new image
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "write to file ..." );
+#endif //USE_LOG4CXX
 
     std::ofstream ofs ( path.c_str(), std::ifstream::out | std::ifstream::binary );
     ofs.write( reinterpret_cast<const char*>( compressedImage->image ), compressedImage->size );
     ofs.close();
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "write to file ... done" );
+#endif //USE_LOG4CXX
 }
 
 void ImageJfif::storeInFile( const std::string & path, const ListOfMarkerShrdPtr & markers, int quality, ChrominanceSubsampling::VALUE cs )
 {    
     if( !m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "m_imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return;
     }
 
@@ -162,13 +179,17 @@ void ImageJfif::storeInFile( const std::string & path, const ListOfMarkerShrdPtr
     compressedImage = enrichCompressedImageWithMakers( compressedImage, markers );
 
     // write new image
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "write to file ..." );
+#endif //USE_LOG4CXX
 
     std::ofstream ofs ( path.c_str(), std::ifstream::out | std::ifstream::binary );
     ofs.write( reinterpret_cast<const char*>( compressedImage->image ), compressedImage->size );
     ofs.close();
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "write to file ... done" );
+#endif //USE_LOG4CXX
 }
 
 ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
@@ -179,7 +200,9 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     // check
     if( !compressedImage )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "compressedImage is a nullptr" );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -206,15 +229,19 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
         ret.m_width                  = width;
         ret.m_height                 = height;
 
+#ifdef USE_LOG4CXX
         LOG4CXX_INFO( loggerImage, "width:  " <<  width << "; height: " <<  height );
         LOG4CXX_INFO( loggerImage, "chrominance subsampling: " << ChrominanceSubsampling::toString( convertTjJpegSubsamp(jpegSubsamp) ) );
         LOG4CXX_INFO( loggerImage, "colorspace: " << Colorspace::toString( ret.m_colorspace ) );
         LOG4CXX_INFO( loggerImage, "pixelformat: " << PixelFormat::toString( ret.m_pixelFormat ) );
         LOG4CXX_INFO( loggerImage, "pits per pixel and channel: " << BitsPerPixelAndChannel::toString( ret.m_bitsPerPixelAndChannel ) );
+#endif //USE_LOG4CXX
     }
     else
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -223,7 +250,9 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     ImageBufferShrdPtr imageBuffer = std::make_shared<ImageBuffer>( yuvPlanarBufferSize );
 
     // decompress image
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ..." );
+#endif //USE_LOG4CXX
 
     tjRet = tjDecompressToYUV2(
         jpegDecompressor, 
@@ -237,7 +266,9 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
         TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
     );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "decompress JFIF image ... done" );
+#endif //USE_LOG4CXX
 
     if( tjRet == 0 )
     {
@@ -246,7 +277,9 @@ ImageJfif ImageJfif::decompress( ImageBufferShrdPtr compressedImage )
     else
     {
         ret.reset();
+#ifdef USE_LOG4CXX
         LOG4CXX_INFO( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
+#endif //USE_LOG4CXX
     }
 
     tjDestroy(jpegDecompressor);
@@ -268,7 +301,9 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     // check image
     if( !image4Compression.m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -286,7 +321,9 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     long unsigned int jpegSize = tjBufSize( image4Compression.m_width, image4Compression.m_height, jpegSubsamp );
     unsigned char* compressedImageBuffer = tjAlloc( jpegSize );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "compress image ..." );
+#endif //USE_LOG4CXX
 
     tjRet = tjCompressFromYUV(
         jpegCompressor,
@@ -301,7 +338,9 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
         TJFLAG_ACCURATEDCT /*TJFLAG_FASTDCT*/
     );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "compress image ... done" );
+#endif //USE_LOG4CXX
 
     if( tjRet == 0 )
     {
@@ -311,7 +350,9 @@ ImageBufferShrdPtr ImageJfif::compress( const ImageJfif & notCompressed, int qua
     else
     {
         ret.reset();
+#ifdef USE_LOG4CXX
         LOG4CXX_INFO( loggerImage, "tjGetErrorStr(): " <<  tjGetErrorStr() );
+#endif //USE_LOG4CXX
     }
 
     tjFree( compressedImageBuffer );
@@ -329,7 +370,9 @@ ImageJfif ImageJfif::convertChrominanceSubsampling( const ImageJfif & image, Chr
     // check image
     if( !image.m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -363,7 +406,9 @@ ImageJfif ImageJfif::convertChrominanceSubsampling( const ImageJfif & image, Chr
 
     if( !done )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "chrominance subsampling not converted" );
+#endif //USE_LOG4CXX
     }
 
     return ret;
@@ -376,7 +421,9 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_444to420( const ImageJfif & i
     // check image
     if( !image.m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -666,7 +713,9 @@ ImageJfif ImageJfif::convertChrominanceSubsampling_420to444( const ImageJfif & i
     // check image
     if( !image.m_imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         return ret;
     }
 
@@ -932,7 +981,9 @@ ImageJfif ImageJfif::getCompressedDecompressedImage( int quality, ChrominanceSub
     ImageBufferShrdPtr compressedImage   = compress( *this, quality, cs );
     ImageJfif          decompressedImage = decompress( compressedImage );
     
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "The size of the compressed image is " << compressedImage->size << " Bytes (quality " << quality << ")." );
+#endif //USE_LOG4CXX
     
     return decompressedImage;
 }

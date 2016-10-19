@@ -9,12 +9,16 @@
 #include "PlanarImageCalc.h"
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
+#endif //USE_LOG4CXX
 
 ImageVariance::ImageVariance()
 : m_pixelFormat( PixelFormat::UNKNOWN )
@@ -51,7 +55,9 @@ ImageVariance::ImageVariance( const ImageInterface & image, const ImageInterface
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "unknown pixelformat " << PixelFormat::toString( image.getPixelFormat() ) );
+#endif //USE_LOG4CXX
             break;
     }
 
@@ -86,7 +92,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
         || ( !imageAvgBuffer )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -96,7 +104,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
         || ( averageImage.getColorspace() != Colorspace::RGB )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -106,7 +116,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
         || ( averageImage.getPixelFormat() != PixelFormat::RGB )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -115,7 +127,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
         || ( averageImage.getHeight() != image.getHeight() / averaging )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size missmatch between original image and average image" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -126,7 +140,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
 
     if( bufferSize != imageBuffer->size )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -138,6 +154,7 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
                                         << bufferSize 
                                         << " Bytes"
@@ -145,10 +162,13 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
                                         << newBufferSize
                                         << " Bytes"
     );
+#endif //USE_LOG4CXX
 
     ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( newBufferSize );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine variance ..." );
+#endif //USE_LOG4CXX
 
     int bytesPerLine = image.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
@@ -194,7 +214,9 @@ ImageVariance ImageVariance::calcVarianceImage_RGB( const ImageInterface & image
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine variance ... done" );
+#endif //USE_LOG4CXX
 
     // collect data
     ret.m_pixelFormat            = image.getPixelFormat();
@@ -218,7 +240,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
 
     if( !imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -228,7 +252,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         || ( averageImage.getColorspace() != Colorspace::YCbCr )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not YCbCr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -238,7 +264,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         || ( averageImage.getPixelFormat() != PixelFormat::YCbCr_Planar )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not YCbCr_Planar" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -265,7 +293,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "not supported chrominance subsampling " << ChrominanceSubsampling::toString( cs ) );
+#endif //USE_LOG4CXX
             ret.reset();
             return ret;
             break;
@@ -276,7 +306,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         && ( averageImage.getChrominanceSubsampling() != cs )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "chrominance subsampling mismatch" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -301,7 +333,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         || ( !imageAvgBuffer )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -310,7 +344,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         || ( averageImage.getHeight() != image.getHeight() / averaging )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "size missmatch between original image and average image" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -328,6 +364,7 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
     // }
 
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
                                         << planaImageOld.bufferSize 
                                         << " Bytes"
@@ -335,8 +372,11 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
                                         << planaImageNew.bufferSize
                                         << " Bytes"
     );
+#endif //USE_LOG4CXX
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine variance ... " );
+#endif //USE_LOG4CXX
 
     unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
     unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
@@ -474,7 +514,9 @@ ImageVariance ImageVariance::calcVarianceImage_YUV( const ImageInterface & image
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "determine variance ... done" );
+#endif //USE_LOG4CXX
 
     // collect information
     ret.m_pixelFormat = image.getPixelFormat();

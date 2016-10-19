@@ -8,12 +8,16 @@
 // include application headers
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
+#endif //USE_LOG4CXX
 
 int getLengthOfMarker( const char * const & image, int & pos )
 {
@@ -32,7 +36,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
     
     if( !compressedImage )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "compressedImage is a nullptr" );
+#endif //USE_LOG4CXX
         return retList;
     }
     
@@ -40,7 +46,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         || ( compressedImage->size == 0 )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "compressedImage->image is a nullptr" );
+#endif //USE_LOG4CXX
         return retList;
     }
     
@@ -50,13 +58,17 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
     // check magic number
     if( std::string( &image[pos], 2 ) != "\xff\xd8" )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "incorrect magic number" );
+#endif //USE_LOG4CXX
         return retList;
     }
     pos += 2;
 
     // parse markers
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "parse JFIF file and copy markers ..." );
+#endif //USE_LOG4CXX
 
     bool withinSOS = false;
     bool seenEOI = false;
@@ -80,12 +92,16 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         
         if( marker == "\xff\xe0" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP0 (JFIF) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xe1" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP1 (EXIF / XMP) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -97,7 +113,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe2" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP2 (ICC) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -109,7 +127,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe3" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP3 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -121,7 +141,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe4" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP4 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -133,7 +155,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe5" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP5 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -145,7 +169,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe6" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP6 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -157,7 +183,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe7" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP7 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -169,7 +197,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe8" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP8 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -181,7 +211,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xe9" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP9 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -193,7 +225,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xea" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP10 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -205,7 +239,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xeb" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP11 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -217,7 +253,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xec" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP12 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -229,7 +267,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xed" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP13 (IPTC) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -241,7 +281,9 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xee" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP14 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -253,43 +295,59 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else if( marker == "\xff\xdb" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DQT marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Quantization Table)" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xc0" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOF0 marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Frame (baseline DCT))" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xc2" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOF2 marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Frame (progressive DCT))" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xc4" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DHT marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Huffman Table)" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xda" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOS marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Scan)" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
             withinSOS = true;
         }
         else if( marker == "\xff\xd9" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "EOI marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (End Of Image)" );
+#endif //USE_LOG4CXX
             seenEOI = true;
         }
         else if( marker == "\xff\xdd" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DRI marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Restart Interval)" );
+#endif //USE_LOG4CXX
             pos += getLengthOfMarker( image, pos );
         }
         else if( marker == "\xff\xde" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "COM marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Comment)" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
 
             MarkerShrdPtr marker = std::make_shared< Marker >();
@@ -301,6 +359,7 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
         }
         else
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_FATAL( loggerImage, "unknown marker("
                           << std::hex
                           << "0x"
@@ -311,17 +370,22 @@ ImageJfif::ListOfMarkerShrdPtr ImageJfif::copyMarkers( ImageBufferShrdPtr compre
                           << "0x"
                           << ( pos - 2 )
                           << " detected!" );
+#endif //USE_LOG4CXX
             return retList;
         }
     }
     
     if( !seenEOI )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "There was no EOI marker. So, the image is probably not correct!" );
+#endif //USE_LOG4CXX
         retList.clear();
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "parse JFIF file and copy markers ... done" );
+#endif //USE_LOG4CXX
     
     return retList;    
 }
@@ -334,7 +398,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
     
     if( !compressedImage )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "compressedImage is a nullptr" );
+#endif //USE_LOG4CXX
         return compressedImage;
     }
 
@@ -342,7 +408,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         || ( compressedImage->size == 0 )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "compressedImage->image is a nullptr" );
+#endif //USE_LOG4CXX
         return compressedImage;
     }
     
@@ -366,7 +434,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
     // check magic number
     if( std::string( &image[pos], 2 ) != "\xff\xd8" )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "incorrect magic number" );
+#endif //USE_LOG4CXX
         return compressedImage;
     }
     std::memcpy( &imageNew[posNew], &image[pos], 2 );
@@ -374,7 +444,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
     posNew += 2;
 
     // parse markers of the old image and include new markers
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "copy markers to new image ..." );
+#endif //USE_LOG4CXX
 
     bool withinSOS = false;
     bool seenEOI = false;
@@ -423,7 +495,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         
         if( marker == "\xff\xe0" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP0 (JFIF) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -432,91 +506,121 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xe1" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP1 (EXIF / XMP) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe2" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP2 (ICC) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe3" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP3 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe4" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP4 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe5" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP5 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe6" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP6 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe7" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP7 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe8" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP8 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xe9" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP9 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xea" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP10 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xeb" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP11 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xec" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP12 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xed" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP13 (IPTC) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xee" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "APP14 (?) marker at possition 0x" << std::hex << ( pos - 2 ) << " detected" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else if( marker == "\xff\xdb" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DQT marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Quantization Table)" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -524,7 +628,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xc0" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOF0 marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Frame (baseline DCT))" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -532,7 +638,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xc2" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOF2 marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Frame (progressive DCT))" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -540,7 +648,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xc4" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DHT marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Huffman Table)" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -548,7 +658,9 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xda" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "SOS marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Start Of Scan)" );
+#endif //USE_LOG4CXX
             std::memcpy( &imageNew[posNew], &image[pos - 2], 2 );
             posNew += 2;
             startOfLastSOS = pos;
@@ -557,14 +669,18 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xd9" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "EOI marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (End Of Image)" );
+#endif //USE_LOG4CXX
             std::memcpy( &imageNew[posNew], &image[pos - 2], 2 );
             posNew += 2;
             seenEOI = true;
         }
         else if( marker == "\xff\xdd" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "DRI marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Define Restart Interval)" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             std::memcpy( &imageNew[posNew], &image[pos - 2], length + 2 );
             pos += length;
@@ -572,12 +688,15 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
         }
         else if( marker == "\xff\xde" )
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_DEBUG( loggerImage, "COM marker at possition 0x" << std::hex << ( pos - 2 ) << " detected (Comment)" );
+#endif //USE_LOG4CXX
             const int length = getLengthOfMarker( image, pos );
             pos += length;
         }
         else
         {
+#ifdef USE_LOG4CXX
             LOG4CXX_FATAL( loggerImage, "unknown marker("
                           << std::hex
                           << "0x"
@@ -588,17 +707,22 @@ ImageBufferShrdPtr ImageJfif::enrichCompressedImageWithMakers( ImageBufferShrdPt
                           << "0x"
                           << ( pos - 2 )
                           << " detected!" );
+#endif //USE_LOG4CXX
             return compressedImage;
         }
     }
     
     if( !seenEOI )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerImage, "There was no EOI marker. So, the source image is probably not correct!" );
+#endif //USE_LOG4CXX
         return compressedImage;
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerImage, "copy markers to new image ... done" );
+#endif //USE_LOG4CXX
     
     return compressedImageNew;
 }

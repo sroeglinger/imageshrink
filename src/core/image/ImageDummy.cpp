@@ -5,13 +5,17 @@
 #include "ImageDummy.h"
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerImage( log4cxx::Logger::getLogger( "image" ) );
-
+#endif //USE_LOG4CXX
+    
 ImageDummy::ImageDummy()
 : m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )

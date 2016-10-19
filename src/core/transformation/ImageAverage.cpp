@@ -9,12 +9,16 @@
 #include "PlanarImageCalc.h"
 
 // include 3rd party headers
+#ifdef USE_LOG4CXX
 #include <log4cxx/logger.h>
+#endif //USE_LOG4CXX
 
 namespace imageshrink
 {
 
+#ifdef USE_LOG4CXX
 static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "transformation" ) );
+#endif //USE_LOG4CXX
 
 ImageAverage::ImageAverage()
 : m_pixelFormat( PixelFormat::UNKNOWN )
@@ -57,7 +61,9 @@ ImageAverage::ImageAverage( const ImageInterface & image )
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "unknown pixelformat " << PixelFormat::toString( image.getPixelFormat() ) );
+#endif //USE_LOG4CXX
             break;
     }
 
@@ -89,7 +95,9 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
 
     if( !imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -97,7 +105,9 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
     // check colorspace
     if( image.getColorspace() != Colorspace::RGB )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -105,7 +115,9 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
     // check pixel format
     if( image.getPixelFormat() != PixelFormat::RGB )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not RGB" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -117,7 +129,9 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
 
     if( bufferSize != imageBuffer->size )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "buffer size mismatch (" << __FILE__ << ", " << __LINE__ << ")" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -129,6 +143,7 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
                                         << bufferSize 
                                         << " Bytes"
@@ -136,10 +151,13 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
                                         << newBufferSize
                                         << " Bytes"
     );
+#endif //USE_LOG4CXX
 
     ImageBufferShrdPtr newImageBuffer = std::make_shared<ImageBuffer>( newBufferSize );
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
+#endif //USE_LOG4CXX
 
     int bytesPerLine = image.getWidth() * bytesPerPixel;
     int bytesPerNewLine = bytesPerLine / averaging;
@@ -176,7 +194,9 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ... done" );
+#endif //USE_LOG4CXX
 
     // collect data
     ret.m_pixelFormat            = image.getPixelFormat();
@@ -200,7 +220,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
 
     if( !imageBuffer )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -208,7 +230,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     // check color space
     if( image.getColorspace() != Colorspace::YCbCr )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "colorspace is not YCbCr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -216,7 +240,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     // check pixel format
     if( image.getPixelFormat() != PixelFormat::YCbCr_Planar )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "pixel-format is not YCbCr_Planar" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -243,7 +269,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
             break;
 
         default:
+#ifdef USE_LOG4CXX
             LOG4CXX_ERROR( loggerTransformation, "not supported chrominance subsampling " << ChrominanceSubsampling::toString( cs ) );
+#endif //USE_LOG4CXX
             ret.reset();
             return ret;
             break;
@@ -265,7 +293,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
         || ( !imageBufferOld )
       )
     {
+#ifdef USE_LOG4CXX
         LOG4CXX_ERROR( loggerTransformation, "imageBuffer is a nullptr" );
+#endif //USE_LOG4CXX
         ret.reset();
         return ret;
     }
@@ -283,6 +313,7 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     // }
 
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "original image buffer size: "
                                         << planaImageOld.bufferSize 
                                         << " Bytes"
@@ -290,8 +321,11 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
                                         << planaImageNew.bufferSize
                                         << " Bytes"
     );
+#endif //USE_LOG4CXX
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ..." );
+#endif //USE_LOG4CXX
 
     unsigned char * const plane0New = &imageBufferNew->image[ 0 ];
     unsigned char * const plane1New = &imageBufferNew->image[ planaImageNew.planeSize0 ];
@@ -416,7 +450,9 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
         }
     }
 
+#ifdef USE_LOG4CXX
     LOG4CXX_INFO( loggerTransformation, "averaging ... done" );
+#endif //USE_LOG4CXX
 
     // collect information
     ret.m_pixelFormat = image.getPixelFormat();
