@@ -7,6 +7,7 @@ if(USE_LOG4CXX)
     add_definitions("-DUSE_LOG4CXX")
 endif()
 
+option(USE_MACPORTS "use libraries from mac-ports (e.g. for log4cxx)" OFF)
 
 #configure libraries
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -16,8 +17,10 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     link_directories( "${PROJECT_SOURCE_DIR}/libs/libjpeg-turbo-1.5.0/build/.libs" )
 
     # include other stuff; assume mac ports
-    link_directories( "/opt/local/lib/" )
-    include_directories( "/opt/local/include/" )
+    if(USE_MACPORTS)
+        link_directories( "/opt/local/lib/" )
+        include_directories( "/opt/local/include/" )
+    endif()
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     link_directories( "/usr/lib/" )
 else()
