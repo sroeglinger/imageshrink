@@ -37,6 +37,7 @@ struct Settings
     , dssimPeakMax( 8900.0e-6 )
     , copyMarkers( true )
     , initQualityStep( 10 )
+    , cs444to420( true )
     , inputFile()
     , outputFile()
     {}
@@ -47,6 +48,7 @@ struct Settings
     double dssimPeakMax;
     bool   copyMarkers;
     int    initQualityStep;
+    bool   cs444to420;
 
     std::string inputFile;
     std::string outputFile;
@@ -75,6 +77,7 @@ void printUsage()
     std::cout << "    --dssimPeakMax value      maximum for the peak DSSIM (0.0 <= value <= 1.0)" << std::endl;
     std::cout << "    --copyMarkers value       maximum for the peak DSSIM (value = none|all)" << std::endl;
     std::cout << "    --initQualityStep value   init value for qulaity steps (1 <= value <= 10)" << std::endl;
+    std::cout << "    --cs444to420 value        convert cs444 to cs420 (value = true|false)" << std::endl;
 }
 
 
@@ -255,6 +258,27 @@ int main( int argc, const char* argv[] )
                     
                     somethingDone = true;
                 }
+                else if( arg == "--cs444to420" )
+                {
+                    const std::string value( argv[ pos ] );
+                    pos = pos + 1;
+                    
+                    if( value == "true" )
+                    {
+                        settings.cs444to420 = true;
+                    }
+                    else if( value == "false" )
+                    {
+                        settings.cs444to420 = false;
+                    }
+                    else
+                    {
+                        error = true;
+                    }
+                    
+                    
+                    somethingDone = true;
+                }
             }
             
             if( !somethingDone )
@@ -336,8 +360,15 @@ int main( int argc, const char* argv[] )
 
         int quality = settings.qualityMax;
         int qualityStep = settings.initQualityStep;
-        const ChrominanceSubsampling::VALUE cs = ChrominanceSubsampling::CS_420;
         std::unordered_map<int /*quality*/, ImageComparisonResult> icrMap;
+        
+        ChrominanceSubsampling::VALUE cs = imagejfif1.getChrominanceSubsampling();
+        if(    ( cs == ChrominanceSubsampling::CS_444 )
+            && ( settings.cs444to420 )
+           )
+        {
+            cs = ChrominanceSubsampling::CS_420;
+        }
         
         while( qualityStep != 0 )
         {
