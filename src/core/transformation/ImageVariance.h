@@ -27,7 +27,7 @@ class ImageVariance
     //********** (DE/CON)STRUCTORS **********
     public:
         ImageVariance();
-        ImageVariance( const ImageInterface & image, const ImageInterface & averageImage );
+        ImageVariance( const ImageInterface & image, const ImageInterface & averageImage, int averaging );
         virtual ~ImageVariance() {}
 
     protected:
@@ -40,6 +40,8 @@ class ImageVariance
     protected:
 
     private:
+        int                           m_averaging;
+    
         PixelFormat::VALUE            m_pixelFormat;
         Colorspace::VALUE             m_colorspace;
         BitsPerPixelAndChannel::VALUE m_bitsPerPixelAndChannel;

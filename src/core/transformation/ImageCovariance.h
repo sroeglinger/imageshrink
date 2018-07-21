@@ -27,8 +27,8 @@ class ImageCovariance
     //********** (DE/CON)STRUCTORS **********
     public:
         ImageCovariance();
-        ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2 );
-        ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 );
+        ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2, int averaging );
+        ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2, int averaging );
         virtual ~ImageCovariance() {}
 
     protected:
@@ -41,6 +41,8 @@ class ImageCovariance
     protected:
 
     private:
+        int                           m_averaging;
+    
         PixelFormat::VALUE            m_pixelFormat;
         Colorspace::VALUE             m_colorspace;
         BitsPerPixelAndChannel::VALUE m_bitsPerPixelAndChannel;

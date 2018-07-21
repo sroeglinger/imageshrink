@@ -28,7 +28,7 @@ class ImageDSSIM
     //********** (DE/CON)STRUCTORS **********
     public:
         ImageDSSIM();
-        ImageDSSIM( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 );
+        ImageDSSIM( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2, int averaging );
         virtual ~ImageDSSIM() {}
 
     protected:
@@ -41,6 +41,8 @@ class ImageDSSIM
     protected:
 
     private:
+        int                           m_averaging;
+    
         PixelFormat::VALUE            m_pixelFormat;
         Colorspace::VALUE             m_colorspace;
         BitsPerPixelAndChannel::VALUE m_bitsPerPixelAndChannel;

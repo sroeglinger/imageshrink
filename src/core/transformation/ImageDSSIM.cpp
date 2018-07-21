@@ -36,8 +36,9 @@ ImageDSSIM::ImageDSSIM()
     reset();
 }
 
-ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2 )
-: m_pixelFormat( PixelFormat::UNKNOWN )
+ImageDSSIM::ImageDSSIM( const ImageCollection & imageCollection1, const ImageCollection & imageCollection2, int averaging )
+: m_averaging( averaging )
+, m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
@@ -224,7 +225,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_RGB( const ImageCollection & imageCollecti
     }
 
     // determine the covariance
-    ImageCovariance covariance( image1Original, image1Average, image2Original, image2Average );
+    ImageCovariance covariance( image1Original, image1Average, image2Original, image2Average, m_averaging );
     ImageBufferShrdPtr covarianceBuffer = covariance.getImageBuffer();
 
     if( !covarianceBuffer )
@@ -456,7 +457,7 @@ ImageDSSIM ImageDSSIM::calcDSSIMImage_YUV( const ImageCollection & imageCollecti
     }
 
     // determine the covariance
-    ImageCovariance covariance( image1Original, image1Average, image2Original, image2Average );
+    ImageCovariance covariance( image1Original, image1Average, image2Original, image2Average, m_averaging );
     ImageBufferShrdPtr covarianceBuffer = covariance.getImageBuffer();
 
     if( !covarianceBuffer )

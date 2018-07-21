@@ -27,8 +27,8 @@ class ImageAverage
     //********** (DE/CON)STRUCTORS **********
     public:
         ImageAverage();
-        ImageAverage( ImageInterfaceShrdPtr image );
-        ImageAverage( const ImageInterface & image );
+        ImageAverage( ImageInterfaceShrdPtr image, int averaging );
+        ImageAverage( const ImageInterface & image, int averaging  );
         virtual ~ImageAverage() {}
 
     protected:
@@ -41,6 +41,8 @@ class ImageAverage
     protected:
 
     private:
+        int                           m_averaging;
+    
         PixelFormat::VALUE            m_pixelFormat;
         Colorspace::VALUE             m_colorspace;
         BitsPerPixelAndChannel::VALUE m_bitsPerPixelAndChannel;

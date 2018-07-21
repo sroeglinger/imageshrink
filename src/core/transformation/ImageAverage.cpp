@@ -21,7 +21,8 @@ static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "tr
 #endif //USE_LOG4CXX
 
 ImageAverage::ImageAverage()
-: m_pixelFormat( PixelFormat::UNKNOWN )
+: m_averaging( 8 )
+, m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
@@ -32,14 +33,15 @@ ImageAverage::ImageAverage()
     reset();
 }
 
-ImageAverage::ImageAverage( ImageInterfaceShrdPtr image )
-: ImageAverage( *image )
+ImageAverage::ImageAverage( ImageInterfaceShrdPtr image, int averaging )
+: ImageAverage( *image, averaging )
 {
     // nothing
 }
 
-ImageAverage::ImageAverage( const ImageInterface & image )
-: m_pixelFormat( PixelFormat::UNKNOWN )
+ImageAverage::ImageAverage( const ImageInterface & image, int averaging )
+: m_averaging( averaging )
+, m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
@@ -88,8 +90,7 @@ void ImageAverage::reset()
 ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
 {
     ImageAverage ret;
-    const int averaging = 8;
-
+    
     // check original image
     ImageBufferShrdPtr imageBuffer = image.getImageBuffer();
 
@@ -137,8 +138,8 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
     }
 
     // determine new image
-    const int newWidth  = image.getWidth() / averaging;
-    const int newHeight = image.getHeight() / averaging;
+    const int newWidth  = image.getWidth() / m_averaging;
+    const int newHeight = image.getHeight() / m_averaging;
 
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
@@ -160,7 +161,7 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
 #endif //USE_LOG4CXX
 
     int bytesPerLine = image.getWidth() * bytesPerPixel;
-    int bytesPerNewLine = bytesPerLine / averaging;
+    int bytesPerNewLine = bytesPerLine / m_averaging;
 
     #pragma omp parallel for
     for( int yNew = 0; yNew < newHeight; ++yNew )
@@ -174,20 +175,20 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
             const int xNewByteOffset = bytesPerPixel * xNew;
             const int yNewByteOffset = bytesPerNewLine * yNew;
 
-            for( int xWindow = 0; xWindow < averaging; ++xWindow )
+            for( int xWindow = 0; xWindow < m_averaging; ++xWindow )
             {
-                const int xWindowByteOffset = bytesPerPixel * ( xNew * averaging + xWindow );
+                const int xWindowByteOffset = bytesPerPixel * ( xNew * m_averaging + xWindow );
 
-                for( int yWindow = 0; yWindow < averaging; ++yWindow )
+                for( int yWindow = 0; yWindow < m_averaging; ++yWindow )
                 {
-                    const int yWindowByteOffset = bytesPerLine * ( yNew * averaging + yWindow );
+                    const int yWindowByteOffset = bytesPerLine * ( yNew * m_averaging + yWindow );
                     sumAvgCh1 += imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
                     sumAvgCh2 += imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 1 ];
                     sumAvgCh3 += imageBuffer->image[ xWindowByteOffset + yWindowByteOffset + 2 ];
                 }
             }
 
-            const int avgAvg = averaging * averaging;
+            const int avgAvg = m_averaging * m_averaging;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumAvgCh1 / avgAvg;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumAvgCh2 / avgAvg;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumAvgCh3 / avgAvg;
@@ -213,7 +214,6 @@ ImageAverage ImageAverage::calcAverageImage_RGB( const ImageInterface & image )
 ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
 {
     ImageAverage ret;
-    const int averaging = 8;
 
     // check original image
     ImageBufferShrdPtr imageBuffer = image.getImageBuffer();
@@ -250,8 +250,8 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     // preparation
     const ChrominanceSubsampling::VALUE cs = image.getChrominanceSubsampling();
 
-    int chromaAveragingX = averaging;
-    int chromaAveragingY = averaging;
+    int chromaAveragingX = m_averaging;
+    int chromaAveragingY = m_averaging;
 
     switch( cs )
     {
@@ -259,13 +259,13 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
             break;
 
         case ChrominanceSubsampling::CS_422:
-            chromaAveragingX = averaging / 2;
-            chromaAveragingY = averaging / 1;
+            chromaAveragingX = m_averaging / 2;
+            chromaAveragingY = m_averaging / 1;
             break;
 
         case ChrominanceSubsampling::CS_420:
-            chromaAveragingX = averaging / 2;
-            chromaAveragingY = averaging / 2;
+            chromaAveragingX = m_averaging / 2;
+            chromaAveragingY = m_averaging / 2;
             break;
 
         default:
@@ -280,8 +280,8 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
     const int oldWidth  = image.getWidth();
     const int oldHeight = image.getHeight();
     
-    const int newWidth  = oldWidth / averaging;
-    const int newHeight = oldHeight / averaging;
+    const int newWidth  = oldWidth / m_averaging;
+    const int newHeight = oldHeight / m_averaging;
 
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( newWidth, newHeight, cs, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( oldWidth, oldHeight, cs, TJ_PAD );
@@ -352,13 +352,13 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
                 {
                     int sum = 0;
 
-                    for( int yOldOffset = 0; yOldOffset < averaging; ++yOldOffset )
+                    for( int yOldOffset = 0; yOldOffset < m_averaging; ++yOldOffset )
                     {
-                        const int yOld = yNew * averaging + yOldOffset;
+                        const int yOld = yNew * m_averaging + yOldOffset;
 
-                        for( int xOldOffset = 0; xOldOffset < averaging; ++xOldOffset )
+                        for( int xOldOffset = 0; xOldOffset < m_averaging; ++xOldOffset )
                         {
-                            const int xOld = xNew * averaging + xOldOffset;
+                            const int xOld = xNew * m_averaging + xOldOffset;
 
                             const int xOldByteOffset = bytesPerPixel * xOld;
                             const int yOldByteOffset = bytesPerOldLine * yOld;
@@ -370,7 +370,7 @@ ImageAverage ImageAverage::calcAverageImage_YUV( const ImageInterface & image )
                     const int xNewByteOffset = bytesPerPixel * xNew;
                     const int yNewByteOffset = bytesPerNewLine * yNew;
 
-                    plane0New[ xNewByteOffset + yNewByteOffset ] = sum / ( averaging * averaging );
+                    plane0New[ xNewByteOffset + yNewByteOffset ] = sum / ( m_averaging * m_averaging );
                 }
             }
         }

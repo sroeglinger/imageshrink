@@ -21,7 +21,8 @@ static log4cxx::LoggerPtr loggerTransformation ( log4cxx::Logger::getLogger( "tr
 #endif //USE_LOG4CXX
 
 ImageCovariance::ImageCovariance()
-: m_pixelFormat( PixelFormat::UNKNOWN )
+: m_averaging( 8 )
+, m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
@@ -32,14 +33,15 @@ ImageCovariance::ImageCovariance()
     reset();
 }
 
-ImageCovariance::ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2 )
-: ImageCovariance( *image1, *averageImage1, *image2, *averageImage2 )
+ImageCovariance::ImageCovariance( ImageInterfaceShrdPtr image1, ImageInterfaceShrdPtr averageImage1, ImageInterfaceShrdPtr image2, ImageInterfaceShrdPtr averageImage2, int averaging )
+: ImageCovariance( *image1, *averageImage1, *image2, *averageImage2, averaging )
 {
     // nothing
 }
 
-ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
-: m_pixelFormat( PixelFormat::UNKNOWN )
+ImageCovariance::ImageCovariance( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2, int averaging )
+: m_averaging( averaging )
+, m_pixelFormat( PixelFormat::UNKNOWN )
 , m_colorspace( Colorspace::UNKNOWN  )
 , m_bitsPerPixelAndChannel( BitsPerPixelAndChannel::UNKNOWN )
 , m_chrominanceSubsampling( ChrominanceSubsampling::UNKNOWN )
@@ -88,7 +90,6 @@ void ImageCovariance::reset()
 ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
 {
     ImageCovariance ret;
-    const int averaging = 8;
 
     // collect buffers
     ImageBufferShrdPtr imageBuffer1    = image1.getImageBuffer();
@@ -114,8 +115,8 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
         || ( image1.getHeight() != image2.getHeight() )
         || ( averageImage1.getWidth() != averageImage2.getWidth() )
         || ( averageImage1.getHeight() != averageImage2.getHeight() )
-        || ( averageImage1.getWidth() != image1.getWidth() / averaging )
-        || ( averageImage1.getHeight() != image1.getHeight() / averaging )
+        || ( averageImage1.getWidth() != image1.getWidth() / m_averaging )
+        || ( averageImage1.getHeight() != image1.getHeight() / m_averaging )
       )
     {
 #ifdef USE_LOG4CXX
@@ -170,8 +171,8 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
     }
 
     // determine new image
-    const int newWidth  = image1.getWidth() / averaging;
-    const int newHeight = image1.getHeight() / averaging;
+    const int newWidth  = image1.getWidth() / m_averaging;
+    const int newHeight = image1.getHeight() / m_averaging;
 
     const int newNofPixels  = newWidth * newHeight;
     const int newBufferSize = bytesPerPixel * newNofPixels;
@@ -193,7 +194,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
 #endif //USE_LOG4CXX
 
     int bytesPerLine = image1.getWidth() * bytesPerPixel;
-    int bytesPerNewLine = bytesPerLine / averaging;
+    int bytesPerNewLine = bytesPerLine / m_averaging;
 
     #pragma omp parallel for
     for( int yNew = 0; yNew < newHeight; ++yNew )
@@ -207,13 +208,13 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
             const int xNewByteOffset = bytesPerPixel * xNew;
             const int yNewByteOffset = bytesPerNewLine * yNew;
 
-            for( int xWindow = 0; xWindow < averaging; ++xWindow )
+            for( int xWindow = 0; xWindow < m_averaging; ++xWindow )
             {
-                const int xWindowByteOffset = bytesPerPixel * ( xNew * averaging + xWindow );
+                const int xWindowByteOffset = bytesPerPixel * ( xNew * m_averaging + xWindow );
 
-                for( int yWindow = 0; yWindow < averaging; ++yWindow )
+                for( int yWindow = 0; yWindow < m_averaging; ++yWindow )
                 {
-                    const int yWindowByteOffset = bytesPerLine * ( yNew * averaging + yWindow );
+                    const int yWindowByteOffset = bytesPerLine * ( yNew * m_averaging + yWindow );
 
                     int ch1_1  = imageBuffer1->image[ xWindowByteOffset + yWindowByteOffset + 0 ];
                     ch1_1     -= imageAvgBuffer1->image[ xNewByteOffset + yNewByteOffset + 0 ];
@@ -235,7 +236,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
                 }
             }
 
-            const int avgAvg = averaging * averaging;
+            const int avgAvg = m_averaging * m_averaging;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 0 ] = sumCh1 / avgAvg;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 1 ] = sumCh2 / avgAvg;
             newImageBuffer->image[ xNewByteOffset + yNewByteOffset + 2 ] = sumCh3 / avgAvg;
@@ -261,7 +262,6 @@ ImageCovariance ImageCovariance::calcCovarianceImage_RGB( const ImageInterface &
 ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface & image1, const ImageInterface & averageImage1, const ImageInterface & image2, const ImageInterface & averageImage2 )
 {
     ImageCovariance ret;
-    const int averaging = 8;
 
     // collect buffers
     ImageBufferShrdPtr imageBuffer1    = image1.getImageBuffer();
@@ -287,8 +287,8 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
         || ( image1.getHeight() != image2.getHeight() )
         || ( averageImage1.getWidth() != averageImage2.getWidth() )
         || ( averageImage1.getHeight() != averageImage2.getHeight() )
-        || ( averageImage1.getWidth() != image1.getWidth() / averaging )
-        || ( averageImage1.getHeight() != image1.getHeight() / averaging )
+        || ( averageImage1.getWidth() != image1.getWidth() / m_averaging )
+        || ( averageImage1.getHeight() != image1.getHeight() / m_averaging )
       )
     {
 #ifdef USE_LOG4CXX
@@ -329,8 +329,8 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
     // preparation
     const ChrominanceSubsampling::VALUE cs = image1.getChrominanceSubsampling();
 
-    int chromaAveragingX = averaging;
-    int chromaAveragingY = averaging;
+    int chromaAveragingX = m_averaging;
+    int chromaAveragingY = m_averaging;
 
     switch( cs )
     {
@@ -338,13 +338,13 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
             break;
 
         case ChrominanceSubsampling::CS_422:
-            chromaAveragingX = averaging / 2;
-            chromaAveragingY = averaging / 1;
+            chromaAveragingX = m_averaging / 2;
+            chromaAveragingY = m_averaging / 1;
             break;
 
         case ChrominanceSubsampling::CS_420:
-            chromaAveragingX = averaging / 2;
-            chromaAveragingY = averaging / 2;
+            chromaAveragingX = m_averaging / 2;
+            chromaAveragingY = m_averaging / 2;
             break;
 
         default:
@@ -374,8 +374,8 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
     const int oldWidth  = image1.getWidth();
     const int oldHeight = image1.getHeight();
     
-    const int newWidth  = oldWidth / averaging;
-    const int newHeight = oldHeight / averaging;
+    const int newWidth  = oldWidth / m_averaging;
+    const int newHeight = oldHeight / m_averaging;
 
     PlanarImageDesc planaImageNew = calcPlanaerImageDescForYUV( newWidth, newHeight, cs, TJ_PAD );
     PlanarImageDesc planaImageOld = calcPlanaerImageDescForYUV( oldWidth, oldHeight, cs, TJ_PAD );
@@ -456,13 +456,13 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
                     const int xNewByteOffset = bytesPerPixel * xNew;
                     const int yNewByteOffset = bytesPerNewLine * yNew;
 
-                    for( int yOldOffset = 0; yOldOffset < averaging; ++yOldOffset )
+                    for( int yOldOffset = 0; yOldOffset < m_averaging; ++yOldOffset )
                     {
-                        const int yOld = yNew * averaging + yOldOffset;
+                        const int yOld = yNew * m_averaging + yOldOffset;
 
-                        for( int xOldOffset = 0; xOldOffset < averaging; ++xOldOffset )
+                        for( int xOldOffset = 0; xOldOffset < m_averaging; ++xOldOffset )
                         {
-                            const int xOld = xNew * averaging + xOldOffset;
+                            const int xOld = xNew * m_averaging + xOldOffset;
 
                             const int xOldByteOffset = bytesPerPixel * xOld;
                             const int yOldByteOffset = bytesPerOldLine * yOld;
@@ -475,7 +475,7 @@ ImageCovariance ImageCovariance::calcCovarianceImage_YUV( const ImageInterface &
                         }
                     }
 
-                    plane0New[ xNewByteOffset + yNewByteOffset ] = sum / ( averaging * averaging );
+                    plane0New[ xNewByteOffset + yNewByteOffset ] = sum / ( m_averaging * m_averaging );
                 }
             }
         }
