@@ -1,4 +1,7 @@
 
+#ifndef ENUM_USAGE_H_
+#define ENUM_USAGE_H_
+
 void printUsage()
 {
     Settings s;
@@ -58,10 +61,11 @@ void printUsage()
               << std::endl;
 
     std::cout << "    --initQualityStep value     init value for qulaity steps "
-              << "(" << Settings::initQualityStep_min
+              << "("
+              << Settings::initQualityStep_min
               << " <= value <= "
               << Settings::initQualityStep_max
-              <<  ", default = "
+              << ", default = "
               << Settings::initQualityStep_default
               << ")"
               << std::endl;
@@ -81,3 +85,5 @@ void printUsage()
               << ")"
               << std::endl;
 }
+
+#endif // ENUM_USAGE_H_
